@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏥 SIMPEG — Sistem Informasi Manajemen Pegawai
+### STIKES Baktara
 
-## Getting Started
+Sistem digital untuk pengelolaan data pegawai, presensi, dokumen, laporan, dan helpdesk berbasis web.
 
-First, run the development server:
+---
 
+## ⚙️ Teknologi
+
+- **Framework:** Next.js 16 (App Router)
+- **Bahasa:** TypeScript
+- **Database:** SQLite via Prisma ORM
+- **Styling:** Tailwind CSS v4
+- **Auth:** Iron Session
+
+---
+
+## 🚀 Cara Menjalankan (Setup Lokal)
+
+### 1. Clone Proyek
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/KitarazikoL234/SIMPEG.git
+cd SIMPEG
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Install Dependensi
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Buat File `.env`
+Buat file `.env` di root proyek, isi dengan:
+```env
+DATABASE_URL="file:./dev.db"
+SESSION_SECRET="ganti-dengan-string-rahasia-minimal-32-karakter"
+GEMINI_API_KEY="isi-jika-ingin-chatbot-aktif"
+```
+> ⚠️ Minta file `.env` dari admin sistem secara langsung (tidak ada di GitHub).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Setup Database
+```bash
+npx prisma generate
+npx prisma db push
+npx prisma db seed
+```
 
-## Learn More
+### 5. Jalankan Sistem
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Buka browser → [http://localhost:3000](http://localhost:3000)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 👤 Akun Default (Setelah Seeding)
 
-## Deploy on Vercel
+| Role | Username | Password |
+|------|----------|----------|
+| Admin | admin | admin123 |
+| Pimpinan | pimpinan | pimpinan123 |
+| Dosen | dosen | dosen123 |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🔄 Alur Kolaborasi Tim
+
+```bash
+# Sebelum mulai kerja — ambil update terbaru
+git pull origin main
+
+# Setelah membuat perubahan — kirim ke GitHub
+git add .
+git commit -m "Deskripsi perubahan"
+git push origin main
+```
+
+---
+
+## 📁 Struktur Folder Utama
+
+```
+src/
+├── app/
+│   ├── (dashboard)/     # Semua halaman dashboard
+│   │   ├── bantuan/     # Helpdesk & tiket
+│   │   ├── dashboard/   # Halaman utama
+│   │   ├── dokumen/     # Manajemen dokumen
+│   │   ├── laporan/     # Laporan & analitik
+│   │   ├── pegawai/     # Data pegawai
+│   │   ├── presensi/    # Absensi pegawai
+│   │   └── layout.tsx   # Sidebar & Header
+│   └── api/             # Backend API endpoints
+├── components/          # Komponen reusable (Chatbot, dll)
+├── lib/                 # Utilitas (auth, prisma, dll)
+prisma/
+├── schema.prisma        # Skema database
+└── seed.ts              # Data awal
+```
