@@ -1,0 +1,22 @@
+{
+  "name": "SIMPEG STIKES Baktara",
+  "short_name": "SIMPEG",
+  "description": "Sistem Informasi Manajemen Kepegawaian STIKES Baktara",
+  "start_url": "/login",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/globe.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/globe.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

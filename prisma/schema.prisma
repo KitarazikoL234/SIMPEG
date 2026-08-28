@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+// Note: SQLite doesn't support enums natively, 
+// so we use String fields with TypeScript enums for validation
+
+// ==================== MODELS ====================
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String
+  nama       String
+  role       String   @default("PEGAWAI") // ADMIN, OPERATOR, PEGAWAI
+  isActive   Boolean  @default(true)
+  employeeId String?  @unique
+  employee   Employee? @relation(fields: [employeeId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  uploadedDocuments Document[] @relation("UploadedBy")
+  tickets           Ticket[]
+  ticketMessages    TicketMessage[]
+}
+
+model Employee {
+  id                  String   @id @default(uuid())
+  nip                 String?  @unique
+  nidn                String?  @unique
+  nidk                String?  @unique
+  nama                String
+  gelarDepan          String?
+  gelarBelakang       String?
+  tempatLahir         String?
+  tanggalLahir        DateTime?
+  jenisKelamin        String?  // LAKI_LAKI, PEREMPUAN
+  agama               String?
+  alamat              String?
+  telepon             String?
+  email               String?
+  tipeKepegawaian     String   // DOSEN, TENDIK
+  statusKepegawaian   String   @default("AKTIF") // AKTIF, NONAKTIF, PENSIUN, CUTI
+  unitKerja           String?
+  jabatanAkademik     String?  // Asisten Ahli, Lektor, Lektor Kepala, Guru Besar
+  jabatanStruktural   String?
+  pangkat             String?
+  golongan            String?
+  rumpunIlmu          String?
+  sertifikasiPendidik Boolean  @default(false)
+  nomorSertifikasi    String?
+  foto                String?
+  tmtPertama          DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user              User?
+  educationHistory  EducationHistory[]
+  positionHistory   PositionHistory[]
+  teachingHistory   TeachingHistory[]
+  documents         Document[]
+  attendances       Attendance[]
+}
+
+model EducationHistory {
+  id          String   @id @default(uuid())
+  jenjang     String   // SD, SMP, SMA, D3, S1, S2, S3
+  institusi   String
+  jurusan     String?
+  tahunMasuk  Int?
+  tahunLulus  Int?
+  nomorIjazah String?
+  ipk         Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model PositionHistory {
+  id        String   @id @default(uuid())
+  jabatan   String
+  pangkat   String?
+  golongan  String?
+  tmt       DateTime // Terhitung Mulai Tanggal
+  nomorSK   String?
+  catatan   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model TeachingHistory {
+  id             String   @id @default(uuid())
+  semester       String   // Ganjil, Genap
+  tahunAkademik  String   // 2025/2026
+  mataKuliah     String
+  sks            Int
+  kelas          String?
+  programStudi   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id              String   @id @default(uuid())
+  judul           String
+  nomorDokumen    String?
+  kategoriUtama   String   // PENDIDIKAN, PENELITIAN, PENGABDIAN, PENUNJANG, KEPEGAWAIAN
+  subKategori     String   // SK_MENGAJAR, SK_PEMBIMBING, etc.
+  tanggalTerbit   DateTime
+  masaBerlaku     DateTime?
+  semester        String?
+  tahunAkademik   String?
+  status          String   @default("AKTIF") // AKTIF, KADALUARSA, ARSIP
+  tipeFile        String   // UPLOAD, LINK
+  filePath        String?
+  linkRepository  String?
+  ukuranFile      Int?
+  catatan         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  uploadedById String?
+  uploadedBy   User?    @relation("UploadedBy", fields: [uploadedById], references: [id])
+}
+
+model Attendance {
+  id           String   @id @default(uuid())
+  tanggal      DateTime
+  jamMasuk     DateTime?
+  jamPulang    DateTime?
+  statusMasuk  String?  // TEPAT_WAKTU, TERLAMBAT
+  statusPulang String?  // TEPAT_WAKTU, PULANG_AWAL
+  fotoMasuk    String?
+  fotoPulang   String?
+  latitude     Float?
+  longitude    Float?
+  catatan      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, tanggal])
+}
+model Ticket {
+  id          String   @id @default(uuid())
+  subject     String
+  status      String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  kategori    String   @default("UMUM") // UMUM, SISTER, AKUN, TEKNIS
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    TicketMessage[]
+}
+
+model TicketMessage {
+  id        String   @id @default(uuid())
+  message   String
+  isFromAdmin Boolean @default(false)
+  createdAt DateTime @default(now())
+  
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+}

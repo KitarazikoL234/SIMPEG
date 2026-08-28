@@ -1,0 +1,432 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { UploadCloud, File, X, Link as LinkIcon, CheckCircle, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+import { 
+  KategoriUtama, 
+  KATEGORI_UTAMA_LABELS, 
+  KATEGORI_SUB_MAP, 
+  SUB_KATEGORI_LABELS,
+  SEMESTER_OPTIONS,
+  generateTahunAkademikOptions
+} from '@/types';
+
+export default function UploadDokumenPage() {
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [loading, setLoading] = useState(false);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [file, setFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    employeeId: '',
+    judul: '',
+    nomorDokumen: '',
+    kategoriUtama: '' as KategoriUtama | '',
+    subKategori: '',
+    tanggalTerbit: '',
+    hasMasaBerlaku: false,
+    masaBerlaku: '',
+    semester: '',
+    tahunAkademik: '',
+    catatan: '',
+    tipeFile: 'UPLOAD',
+    linkRepository: '',
+  });
+
+  const tahunOptions = generateTahunAkademikOptions();
+
+  useEffect(() => {
+    // Fetch employees for dropdown
+    fetch('/api/employees?limit=100')
+      .then(res => res.json())
+      .then(json => {
+        if (json.success && json.data?.data) {
+          setEmployees(json.data.data);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData(prev => ({ ...prev, [name]: checked }));
+    } else {
+      setFormData(prev => ({ 
+        ...prev, 
+        [name]: value,
+        ...(name === 'kategoriUtama' ? { subKategori: '' } : {}) 
+      }));
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile.type === 'application/pdf') {
+        setFile(droppedFile);
+      } else {
+        alert('Hanya file PDF yang diperbolehkan');
+      }
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      if (selectedFile.type === 'application/pdf') {
+        setFile(selectedFile);
+      } else {
+        alert('Hanya file PDF yang diperbolehkan');
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      let filePath = '';
+      let ukuranFile = 0;
+
+      // Handle file upload first if needed
+      if (formData.tipeFile === 'UPLOAD' && file) {
+        const uploadData = new FormData();
+        uploadData.append('file', file);
+        
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadData,
+        });
+        
+        const uploadJson = await uploadRes.json();
+        if (!uploadJson.success) throw new Error(uploadJson.error || 'Upload failed');
+        
+        filePath = uploadJson.data.filePath;
+        ukuranFile = uploadJson.data.ukuranFile;
+      }
+
+      // Submit document data
+      const docData = {
+        ...formData,
+        masaBerlaku: formData.hasMasaBerlaku ? formData.masaBerlaku : null,
+        filePath,
+        ukuranFile,
+      };
+
+      const res = await fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(docData),
+      });
+
+      const json = await res.json();
+      
+      if (json.success) {
+        alert('Dokumen berhasil disimpan');
+        router.push('/dokumen');
+      } else {
+        throw new Error(json.error || 'Failed to save document');
+      }
+    } catch (error: any) {
+      alert(error.message || 'Terjadi kesalahan');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+      <div className="flex items-center gap-4">
+        <Link href="/dokumen" className="p-2 bg-white rounded-lg border border-slate-200 text-slate-500 hover:text-slate-900 transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Upload Dokumen Baru</h1>
+          <p className="text-slate-500 mt-1">Tambahkan dokumen kepegawaian ke dalam arsip digital</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+            <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm">1</span>
+            Informasi Dokumen
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Pegawai *</label>
+              <select
+                name="employeeId"
+                required
+                value={formData.employeeId}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+              >
+                <option value="">-- Pilih Pegawai --</option>
+                {employees.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.nama} ({emp.nip || emp.nidn})</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Judul Dokumen *</label>
+              <input
+                type="text"
+                name="judul"
+                required
+                value={formData.judul}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+                placeholder="Contoh: SK Pengangkatan Dosen Tetap"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Kategori Utama *</label>
+              <select
+                name="kategoriUtama"
+                required
+                value={formData.kategoriUtama}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+              >
+                <option value="">-- Pilih Kategori --</option>
+                {Object.values(KategoriUtama).map(cat => (
+                  <option key={cat} value={cat}>{KATEGORI_UTAMA_LABELS[cat as KategoriUtama]}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Sub Kategori *</label>
+              <select
+                name="subKategori"
+                required
+                value={formData.subKategori}
+                onChange={handleChange}
+                disabled={!formData.kategoriUtama}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-slate-50 disabled:text-slate-400"
+              >
+                <option value="">-- Pilih Sub Kategori --</option>
+                {formData.kategoriUtama && KATEGORI_SUB_MAP[formData.kategoriUtama as KategoriUtama]?.map(sub => (
+                  <option key={sub} value={sub}>{SUB_KATEGORI_LABELS[sub] || sub}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Dokumen</label>
+              <input
+                type="text"
+                name="nomorDokumen"
+                value={formData.nomorDokumen}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+                placeholder="Contoh: 123/SK/2023"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Tanggal Terbit *</label>
+              <input
+                type="date"
+                name="tanggalTerbit"
+                required
+                value={formData.tanggalTerbit}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+              />
+            </div>
+
+            <div className="md:col-span-2 bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="hasMasaBerlaku"
+                  checked={formData.hasMasaBerlaku}
+                  onChange={handleChange}
+                  className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
+                />
+                Dokumen memiliki masa berlaku
+              </label>
+              
+              {formData.hasMasaBerlaku && (
+                <div className="pl-6">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Berlaku Sampai *</label>
+                  <input
+                    type="date"
+                    name="masaBerlaku"
+                    required={formData.hasMasaBerlaku}
+                    value={formData.masaBerlaku}
+                    onChange={handleChange}
+                    className="w-full md:w-1/2 px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Semester (Opsional)</label>
+              <select
+                name="semester"
+                value={formData.semester}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+              >
+                <option value="">-- Pilih Semester --</option>
+                {SEMESTER_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Tahun Akademik (Opsional)</label>
+              <select
+                name="tahunAkademik"
+                value={formData.tahunAkademik}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+              >
+                <option value="">-- Pilih Tahun Akademik --</option>
+                {tahunOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Catatan Tambahan (Opsional)</label>
+              <textarea
+                name="catatan"
+                rows={3}
+                value={formData.catatan}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white resize-none"
+                placeholder="Tambahkan catatan jika diperlukan..."
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+            <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm">2</span>
+            File Dokumen
+          </h2>
+
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <label className={`flex-1 flex flex-col items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.tipeFile === 'UPLOAD' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 hover:border-blue-300 bg-white text-slate-600'}`}>
+              <input type="radio" name="tipeFile" value="UPLOAD" checked={formData.tipeFile === 'UPLOAD'} onChange={handleChange} className="sr-only" />
+              <UploadCloud className="w-6 h-6 mb-2" />
+              <span className="font-medium">Upload File PDF</span>
+            </label>
+            <label className={`flex-1 flex flex-col items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.tipeFile === 'LINK' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 hover:border-blue-300 bg-white text-slate-600'}`}>
+              <input type="radio" name="tipeFile" value="LINK" checked={formData.tipeFile === 'LINK'} onChange={handleChange} className="sr-only" />
+              <LinkIcon className="w-6 h-6 mb-2" />
+              <span className="font-medium">Tautan Repository</span>
+            </label>
+          </div>
+
+          {formData.tipeFile === 'UPLOAD' ? (
+            <div 
+              className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100'}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => !file && fileInputRef.current?.click()}
+            >
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileSelect} 
+                accept="application/pdf" 
+                className="hidden" 
+              />
+              
+              {file ? (
+                <div className="flex flex-col items-center w-full max-w-md">
+                  <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                    <File className="w-8 h-8" />
+                  </div>
+                  <p className="font-medium text-slate-900 text-center truncate w-full px-4">{file.name}</p>
+                  <p className="text-sm text-slate-500 mt-1">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                  <button 
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                    className="mt-4 px-4 py-2 flex items-center gap-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
+                  >
+                    <X className="w-4 h-4" /> Hapus File
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center pointer-events-none">
+                  <div className="w-16 h-16 bg-white text-slate-400 rounded-full flex items-center justify-center mb-4 shadow-sm">
+                    <UploadCloud className="w-8 h-8" />
+                  </div>
+                  <p className="font-medium text-slate-700">Seret file PDF ke sini atau klik untuk memilih</p>
+                  <p className="text-sm text-slate-500 mt-2">Maksimal ukuran file: 10MB</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Tautan Repository / Google Drive *</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <LinkIcon className="h-5 w-5 text-slate-400" />
+                </div>
+                <input
+                  type="url"
+                  name="linkRepository"
+                  required={formData.tipeFile === 'LINK'}
+                  value={formData.linkRepository}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  placeholder="https://repository.example.com/dokumen/SK123.pdf"
+                />
+              </div>
+              <p className="text-xs text-slate-500 mt-2">Pastikan tautan dapat diakses secara publik (tidak memerlukan login).</p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-4 pt-4 border-t border-slate-200">
+          <Link href="/dokumen" className="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors">
+            Batal
+          </Link>
+          <button 
+            type="submit" 
+            disabled={loading || (formData.tipeFile === 'UPLOAD' && !file)}
+            className="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <CheckCircle className="w-5 h-5" />
+            )}
+            <span>Simpan Dokumen</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
