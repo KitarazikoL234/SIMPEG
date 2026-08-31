@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     const isEarlyLeave = clockMinutes < leaveThreshold;
     const statusPulang = isEarlyLeave ? 'PULANG_AWAL' : 'TEPAT_WAKTU';
 
-    const locationText = alamat || (latitude && longitude ? `Koordinat: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}` : 'Lokasi tidak tersedia');
+    const locationText = catatan || 'Verifikasi Face Selfie';
 
     if (type === 'masuk') {
       if (existingRecord) {
@@ -142,3 +142,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
