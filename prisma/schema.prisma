@@ -67,6 +67,10 @@ model Employee {
   teachingHistory   TeachingHistory[]
   documents         Document[]
   attendances       Attendance[]
+  penelitians        Penelitian[]
+  pengabdians        Pengabdian[]
+  penunjangs         Penunjang[]
+  bimbinganMahasiswas BimbinganMahasiswa[]
 }
 
 model EducationHistory {
@@ -184,3 +188,88 @@ model TicketMessage {
   senderId  String
   sender    User     @relation(fields: [senderId], references: [id])
 }
+
+model Penelitian {
+  id                String   @id @default(uuid())
+  judul             String
+  jenisPenelitian   String   // JURNAL, PROSIDING, BUKU, HKI, PATEN
+  namaJurnal        String?  // nama jurnal/prosiding
+  penerbit          String?
+  tahun             Int
+  volume            String?
+  nomor             String?
+  halaman           String?
+  url               String?  // DOI atau link online
+  isInternasional   Boolean  @default(false)
+  peranPenulis      String   @default("PENULIS_UTAMA") // PENULIS_UTAMA, ANGGOTA
+  tipeFile          String?  // UPLOAD, LINK
+  filePath          String?
+  linkRepository    String?
+  catatan           String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model Pengabdian {
+  id                  String   @id @default(uuid())
+  judul               String
+  jenisPengabdian     String   // PENYULUHAN, PELATIHAN, PENDAMPINGAN, LAYANAN_MASYARAKAT
+  tempatPelaksanaan   String?
+  tanggalMulai        DateTime
+  tanggalSelesai      DateTime?
+  sumberDana          String?  // MANDIRI, INSTITUSI, DIKTI, LAINNYA
+  jumlahDana          Float?
+  peranDosen          String   @default("KETUA") // KETUA, ANGGOTA
+  tipeFile            String?  // UPLOAD, LINK
+  filePath            String?
+  linkRepository      String?
+  catatan             String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model Penunjang {
+  id               String   @id @default(uuid())
+  judul            String
+  jenisPenunjang   String   // KEPANITIAAN, ORGANISASI_PROFESI, SEMINAR, PELATIHAN, TUGAS_TAMBAHAN
+  peran            String?  // Ketua Panitia, Anggota, Pemateri, Peserta
+  lembaga          String?  // Penyelenggara
+  tanggalMulai     DateTime
+  tanggalSelesai   DateTime?
+  nomorSK          String?
+  tipeFile         String?  // UPLOAD, LINK
+  filePath         String?
+  linkRepository   String?
+  catatan          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model BimbinganMahasiswa {
+  id              String   @id @default(uuid())
+  namaMahasiswa   String
+  nim             String?
+  programStudi    String?
+  jenisBimbingan  String   // SKRIPSI, KTI, PKL, AKADEMIK
+  judulTugas      String?  // Judul skripsi/KTI
+  peranDosen      String   @default("PEMBIMBING_UTAMA") // PEMBIMBING_UTAMA, PEMBIMBING_PENDAMPING, PENGUJI
+  semester        String?  // Ganjil, Genap
+  tahunAkademik   String?  // 2025/2026
+  status          String   @default("BERJALAN") // BERJALAN, LULUS, BATAL
+  catatan         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
