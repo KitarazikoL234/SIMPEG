@@ -1,14 +1,32 @@
 import { NextResponse } from 'next/server';
+import { cookies } from "next/headers";
+import { getIronSession } from "iron-session";
+import { SessionData, sessionOptions } from "@/lib/auth";
 import prisma from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    
+    if (!session.isLoggedIn) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q') || '';
     const kategoriUtama = searchParams.get('kategoriUtama');
     const subKategori = searchParams.get('subKategori');
     const status = searchParams.get('status');
-    const employeeId = searchParams.get('employeeId');
+    // If Admin/Pimpinan, they can filter by employeeId. Otherwise, force to their own employeeId.
+    let employeeId = searchParams.get('employeeId');
+    
+    if (session.role !== 'ADMIN' && session.role !== 'PIMPINAN') {
+      if (!session.employeeId) {
+        return NextResponse.json({ success: false, error: 'User does not have an employee profile' }, { status: 403 });
+      }
+      employeeId = session.employeeId;
+    }
+
     const tahunAkademik = searchParams.get('tahunAkademik');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
@@ -57,6 +75,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    
+    if (!session.isLoggedIn) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const contentType = request.headers.get('content-type') || '';
     let body: any = {};
 
@@ -75,6 +99,13 @@ export async function POST(request: Request) {
       tipeFile, filePath, linkRepository, ukuranFile, catatan,
       employeeId, uploadedById
     } = body;
+
+    // Prevent Dosen/Tendik from uploading documents to other employee profiles
+    if (session.role !== 'ADMIN' && session.role !== 'PIMPINAN') {
+      if (employeeId !== session.employeeId) {
+        return NextResponse.json({ success: false, error: 'You can only upload documents for yourself' }, { status: 403 });
+      }
+    }
 
     if (!judul || !kategoriUtama || !subKategori || !tanggalTerbit || !employeeId) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });

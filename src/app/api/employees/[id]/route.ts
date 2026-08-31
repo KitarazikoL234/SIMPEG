@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from "next/headers";
+import { getIronSession } from "iron-session";
+import { SessionData, sessionOptions } from "@/lib/auth";
 import { prisma } from '@/lib/prisma';
 
 export async function GET(
@@ -6,7 +9,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     const { id } = await params;
+    
     const employee = await prisma.employee.findUnique({
       where: { id },
       include: {
@@ -23,6 +28,14 @@ export async function GET(
         { success: false, message: 'Pegawai tidak ditemukan' },
         { status: 404 }
       );
+    }
+
+    // Dokumen hanya bisa dilihat oleh pemiliknya sendiri, atau oleh ADMIN/PIMPINAN.
+    if (session.role !== 'ADMIN' && session.role !== 'PIMPINAN') {
+      if (employee.id !== session.employeeId) {
+        // Strip documents if the user is not the owner and not an admin/pimpinan
+        employee.documents = []; 
+      }
     }
 
     return NextResponse.json({ success: true, data: employee });
