@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+const fs = require('fs');
+const code = import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { SessionData, sessionOptions } from "@/lib/auth";
@@ -142,3 +143,6 @@ export async function GET() {
     );
   }
 }
+;
+fs.writeFileSync('src/app/api/stats/route.ts', code);
+console.log('Update success');

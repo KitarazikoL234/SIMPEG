@@ -63,33 +63,67 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Total Dokumen" 
-          value={loading ? "..." : stats?.totalDokumen || 0} 
-          icon={<FileIcon className="w-10 h-10 text-white" />}
-          bgColor="bg-[#3B82F6]"
-          textColor="text-white"
-          desc={`Pada ${new Date().toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}`}
-          loading={loading}
-        />
-        <StatCard 
-          title="Total Pegawai" 
-          value={loading ? "..." : stats?.totalPegawai || 0} 
-          icon={<UsersIcon className="w-10 h-10 text-white" />}
-          bgColor="bg-[#4ADE80]"
-          textColor="text-white"
-          desc="Pegawai aktif"
-          loading={loading}
-        />
-        <StatCard 
-          title="Total Kategori" 
-          value={loading ? "..." : 5} 
-          icon={<FolderIcon className="w-10 h-10 text-white" />}
-          bgColor="bg-[#F97316]"
-          textColor="text-white"
-          desc="Kategori digunakan"
-          loading={loading}
-        />
+        {stats?.role === 'ADMIN' || stats?.role === 'PIMPINAN' ? (
+          <>
+            <StatCard 
+              title="Total Dokumen" 
+              value={loading ? "..." : stats?.totalDokumen || 0} 
+              icon={<FileIcon className="w-10 h-10 text-white" />}
+              bgColor="bg-[#3B82F6]"
+              textColor="text-white"
+              desc={`Pada ${new Date().toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}`}
+              loading={loading}
+            />
+            <StatCard 
+              title="Total Pegawai" 
+              value={loading ? "..." : stats?.totalPegawai || 0} 
+              icon={<UsersIcon className="w-10 h-10 text-white" />}
+              bgColor="bg-[#4ADE80]"
+              textColor="text-white"
+              desc="Pegawai aktif"
+              loading={loading}
+            />
+            <StatCard 
+              title="Total Kategori" 
+              value={loading ? "..." : 5} 
+              icon={<FolderIcon className="w-10 h-10 text-white" />}
+              bgColor="bg-[#F97316]"
+              textColor="text-white"
+              desc="Kategori digunakan"
+              loading={loading}
+            />
+          </>
+        ) : (
+          <>
+            <StatCard 
+              title="Dokumen Saya" 
+              value={loading ? "..." : stats?.myTotalDokumen || 0} 
+              icon={<FileIcon className="w-10 h-10 text-white" />}
+              bgColor="bg-[#3B82F6]"
+              textColor="text-white"
+              desc="Total arsip diunggah"
+              loading={loading}
+            />
+            <StatCard 
+              title="Kategori Dokumen" 
+              value={loading ? "..." : (stats?.dokumenPerKategori?.filter((c: number) => c > 0).length || 0)} 
+              icon={<FolderIcon className="w-10 h-10 text-white" />}
+              bgColor="bg-[#4ADE80]"
+              textColor="text-white"
+              desc="Kategori terisi"
+              loading={loading}
+            />
+            <StatCard 
+              title="Presensi Hari Ini" 
+              value={loading ? "..." : (stats?.myPresensiHariIni ? "Hadir" : "Belum")} 
+              icon={<UserCheckIcon className="w-10 h-10 text-white" />}
+              bgColor="bg-[#F97316]"
+              textColor="text-white"
+              desc={loading ? "..." : (stats?.myPresensiHariIni ? "Presensi tercatat" : "Silakan absen masuk")}
+              loading={loading}
+            />
+          </>
+        )}
         <ActionCard 
           title="Tambah Arsip" 
           desc="Tambah arsip dokumen digital" 
@@ -287,6 +321,10 @@ function FileIcon(props: any) {
 function FileWarningIcon(props: any) {
   return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 12v4"/><path d="M12 20h.01"/></svg>
 }
+function UserCheckIcon(props: any) {
+  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+}
+
 function PlusIcon(props: any) {
   return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
 }
