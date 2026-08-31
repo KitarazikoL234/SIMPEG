@@ -146,7 +146,7 @@ export default function DashboardPage() {
                       <div className="flex items-center mt-1 space-x-2 text-xs text-[#64748B]">
                         <span className="truncate">{doc.pegawai}</span>
                         <span>•</span>
-                        <span>{doc.tanggal}</span>
+                        <span>{new Date(doc.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                       </div>
                     </div>
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 uppercase">
@@ -201,7 +201,7 @@ export default function DashboardPage() {
                       {doc.kategori}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-[#0F172A]">{doc.tanggal}</td>
+                  <td className="px-6 py-4 text-sm text-[#0F172A]">{new Date(doc.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
                   <td className="px-6 py-4">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
                       {doc.sisaHari} Hari

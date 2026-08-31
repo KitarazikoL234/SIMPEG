@@ -98,7 +98,7 @@ export async function GET() {
         judul: doc.judul,
         pegawai: formatNama(doc.employee),
         kategori: doc.kategoriUtama,
-        tanggal: doc.masaBerlaku!.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
+        tanggal: doc.masaBerlaku!.toISOString(),
         sisaHari: Math.ceil(
           (doc.masaBerlaku!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
         ),
