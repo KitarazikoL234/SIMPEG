@@ -298,13 +298,27 @@ export default function PresensiPage() {
     return clockInMinutes > startMinutes;
   };
 
-  const checkIsEarlyLeave = (clockOutTimeStr: string | Date | undefined | null) => {
-    if (!clockOutTimeStr) return false;
-    const d = new Date(clockOutTimeStr);
-    const clockOutMinutes = d.getHours() * 60 + d.getMinutes();
+  const getDynamicEndTime = (clockInTimeStr: any) => {
+    if (!clockInTimeStr) return jamSelesai;
+    const dIn = new Date(clockInTimeStr);
+    const clockInMinutes = dIn.getHours() * 60 + dIn.getMinutes();
+    const [startH, startM] = jamMulai.split(':').map(Number);
     const [endH, endM] = jamSelesai.split(':').map(Number);
-    const endMinutes = (endH || 16) * 60 + (endM || 0);
-    return clockOutMinutes < endMinutes;
+    let workDurationMins = (endH * 60 + endM) - (startH * 60 + startM);
+    if (workDurationMins <= 0) workDurationMins = 8 * 60;
+    const expectedEndMinutes = clockInMinutes + workDurationMins;
+    const outH = Math.floor(expectedEndMinutes / 60) % 24;
+    const outM = expectedEndMinutes % 60;
+    return outH.toString().padStart(2, '0') + ':' + outM.toString().padStart(2, '0');
+  };
+
+  const checkIsEarlyLeave = (clockInTimeStr: any, clockOutTimeStr: any) => {
+    if (!clockOutTimeStr || !clockInTimeStr) return false;
+    const dOut = new Date(clockOutTimeStr);
+    const clockOutMinutes = dOut.getHours() * 60 + dOut.getMinutes();
+    const [endH, endM] = getDynamicEndTime(clockInTimeStr).split(':').map(Number);
+    const expectedEndMinutes = endH * 60 + endM;
+    return clockOutMinutes < expectedEndMinutes;
   };
 
   const hariIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -697,13 +711,13 @@ export default function PresensiPage() {
                 {/* Status Jam Pulang */}
                 <div className={`rounded-2xl border-2 overflow-hidden transition-all ${
                   todayRecord?.hasClockOut 
-                    ? (checkIsEarlyLeave(todayRecord.clockOutTime) ? 'border-amber-300' : 'border-blue-400') 
+                    ? (checkIsEarlyLeave(todayRecord?.clockInTime, todayRecord?.clockOutTime) ? 'border-amber-300' : 'border-blue-400') 
                     : (todayRecord?.hasClockIn ? 'border-blue-200' : 'border-slate-200')
                 }`}>
                   {/* Header */}
                   <div className={`px-5 py-3 flex items-center justify-between ${
                     todayRecord?.hasClockOut 
-                      ? (checkIsEarlyLeave(todayRecord.clockOutTime) ? 'bg-amber-500' : 'bg-blue-600') 
+                      ? (checkIsEarlyLeave(todayRecord?.clockInTime, todayRecord?.clockOutTime) ? 'bg-amber-500' : 'bg-blue-600') 
                       : (todayRecord?.hasClockIn ? 'bg-blue-400' : 'bg-slate-400')
                   }`}>
                     <div className="flex items-center gap-2 text-white font-bold text-sm">
@@ -712,7 +726,7 @@ export default function PresensiPage() {
                     </div>
                     {todayRecord?.hasClockOut && (
                       <span className="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                        {checkIsEarlyLeave(todayRecord.clockOutTime) ? '⚠ PULANG AWAL' : '✓ SESUAI JADWAL'}
+                        {checkIsEarlyLeave(todayRecord?.clockInTime, todayRecord?.clockOutTime) ? '⚠ PULANG AWAL' : '✓ SESUAI JADWAL'}
                       </span>
                     )}
                     {!todayRecord?.hasClockOut && todayRecord?.hasClockIn && (
@@ -724,7 +738,7 @@ export default function PresensiPage() {
                   {/* Body */}
                   <div className={`px-5 py-4 ${
                     todayRecord?.hasClockOut 
-                      ? (checkIsEarlyLeave(todayRecord.clockOutTime) ? 'bg-amber-50' : 'bg-blue-50') 
+                      ? (checkIsEarlyLeave(todayRecord?.clockInTime, todayRecord?.clockOutTime) ? 'bg-amber-50' : 'bg-blue-50') 
                       : (todayRecord?.hasClockIn ? 'bg-blue-50/40' : 'bg-slate-50')
                   }`}>
                     {todayRecord?.hasClockOut ? (
@@ -732,18 +746,18 @@ export default function PresensiPage() {
                         <div>
                           <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-0.5">Jam Pulang</p>
                           <p className={`text-5xl font-black font-mono tabular-nums ${
-                            checkIsEarlyLeave(todayRecord.clockOutTime) ? 'text-amber-700' : 'text-blue-700'
+                            checkIsEarlyLeave(todayRecord?.clockInTime, todayRecord?.clockOutTime) ? 'text-amber-700' : 'text-blue-700'
                           }`}>
                             {formatTimeStr(todayRecord.clockOutTime)}
                           </p>
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-xs text-slate-500 font-medium">Jadwal Pulang</p>
-                          <p className="text-lg font-extrabold text-slate-700">{jamSelesai} WIB</p>
+                          <p className="text-lg font-extrabold text-slate-700">{getDynamicEndTime(todayRecord?.clockInTime)} WIB</p>
                           <p className={`text-xs font-bold mt-1 ${
-                            checkIsEarlyLeave(todayRecord.clockOutTime) ? 'text-amber-700' : 'text-blue-700'
+                            checkIsEarlyLeave(todayRecord?.clockInTime, todayRecord?.clockOutTime) ? 'text-amber-700' : 'text-blue-700'
                           }`}>
-                            {checkIsEarlyLeave(todayRecord.clockOutTime) ? '⚠ Pulang sebelum jadwal' : '✓ Selesai sesuai jadwal'}
+                            {checkIsEarlyLeave(todayRecord?.clockInTime, todayRecord?.clockOutTime) ? '⚠ Pulang sebelum jadwal' : '✓ Selesai sesuai jadwal'}
                           </p>
                         </div>
                       </div>
@@ -754,7 +768,7 @@ export default function PresensiPage() {
                         </div>
                         <div>
                           <p className="font-bold text-blue-700 text-base">Sedang Bekerja</p>
-                          <p className="text-xs text-slate-500 mt-0.5">Bisa pulang pukul: <span className="font-bold">{jamSelesai} WIB</span></p>
+                          <p className="text-xs text-slate-500 mt-0.5">Bisa pulang pukul: <span className="font-bold">{getDynamicEndTime(todayRecord?.clockInTime)} WIB</span></p>
                         </div>
                       </div>
                     ) : (
@@ -952,7 +966,7 @@ export default function PresensiPage() {
                 }
 
                 const late = checkIsLate(rec.jamMasuk);
-                const earlyLeave = rec.jamPulang ? checkIsEarlyLeave(rec.jamPulang) : false;
+                const earlyLeave = rec.jamPulang ? checkIsEarlyLeave(rec.jamMasuk, rec.jamPulang) : false;
 
                 return (
                   <tr key={rec.id || idx} className="hover:bg-slate-50/80 transition-colors">
@@ -1028,5 +1042,7 @@ export default function PresensiPage() {
     </div>
   );
 }
+
+
 
 
