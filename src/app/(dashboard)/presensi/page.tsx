@@ -241,6 +241,19 @@ export default function PresensiPage() {
       return;
     }
 
+    // Validasi jam kerja
+    if (!todayRecord?.hasClockIn) {
+      const [startH, startM] = jamMulai.split(':').map(Number);
+      const startMinutes = startH * 60 + startM;
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      if (currentMinutes < startMinutes - 120) {
+        const allowedH = Math.floor((startMinutes - 120) / 60);
+        const allowedM = (startMinutes - 120) % 60;
+        setError('Belum masuk waktu presensi. Anda baru bisa absen masuk mulai pukul ' + allowedH.toString().padStart(2, '0') + ':' + allowedM.toString().padStart(2, '0') + ' WIB.');
+        return;
+      }
+    }
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
