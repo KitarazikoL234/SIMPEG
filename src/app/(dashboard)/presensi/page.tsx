@@ -273,10 +273,7 @@ export default function PresensiPage() {
       setError('Sistem kamera belum siap.');
       return;
     }
-    if (!isFaceDetected) {
-      setError('Wajah tidak terdeteksi! Mohon tampilkan wajah Anda ke kamera sebelum mengambil foto.');
-      return;
-    }
+
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
@@ -573,10 +570,7 @@ export default function PresensiPage() {
                 )}
                 {cameraReady && (
                   <>
-                    <div className={`absolute top-4 left-1/2 -translate-x-1/2 backdrop-blur-md px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 z-20 shadow-lg border-2 whitespace-nowrap ${isFaceDetected ? 'bg-emerald-900/80 text-emerald-100 border-emerald-500/50' : 'bg-amber-900/80 text-amber-100 border-amber-500/50 animate-pulse'}`}>
-                      <ScanFace className={`w-4 h-4 ${isFaceDetected ? 'text-emerald-400' : 'text-amber-400'}`} /> 
-                      {faceDetectMsg}
-                    </div>
+
                     <button 
                       onClick={takePhoto} 
                       className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/20 backdrop-blur-md rounded-full w-20 h-20 flex items-center justify-center shadow-2xl hover:scale-110 transition-transform active:scale-95 border-4 border-white/60 z-20"
@@ -587,9 +581,6 @@ export default function PresensiPage() {
                   </>
                 )}
               </div>
-              <p className="text-center text-xs font-semibold text-slate-500 mt-3">
-                📸 Tekan tombol lingkaran putih di atas untuk mengambil foto & mencatat presensi secara instan.
-              </p>
             </div>
           ) : photo ? (
             <div className="w-full max-w-[360px] mx-auto mb-6">
@@ -630,9 +621,7 @@ export default function PresensiPage() {
                   <Play className="w-6 h-6 fill-current" />
                   {photo ? 'SIMPAN PRESENSI MASUK' : 'AMBIL FOTO UNTUK CLOCK IN'}
                 </button>
-                <p className="text-center text-slate-400 text-sm font-medium">
-                  {cameraActive ? '📸 Ambil foto wajah selfie untuk otomatis mencatat presensi' : '👆 Klik tombol di atas untuk menyalakan kamera'}
-                </p>
+                
               </>
             ) : !todayRecord?.hasClockOut ? (
               <>
@@ -643,9 +632,7 @@ export default function PresensiPage() {
                   <Camera className="w-6 h-6" />
                   {photo ? 'SIMPAN PRESENSI PULANG' : 'AMBIL FOTO UNTUK CLOCK OUT'}
                 </button>
-                <p className="text-center text-slate-400 text-sm font-medium">
-                  {cameraActive ? '📸 Ambil foto wajah selfie untuk otomatis memperbarui presensi pulang' : '👆 Ambil foto saat jam kerja selesai'}
-                </p>
+                
               </>
             ) : (
               <div className="space-y-3">
@@ -1070,3 +1057,4 @@ export default function PresensiPage() {
     </div>
   );
 }
+
