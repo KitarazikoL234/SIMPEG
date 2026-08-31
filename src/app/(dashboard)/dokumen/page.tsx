@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Search, Plus, FileText, Grid as GridIcon, List as ListIcon,
-  Filter, Download, Eye, MoreVertical, Link as LinkIcon, Trash2
+  Filter, Download, Eye, MoreVertical, Link as LinkIcon, Trash2, Pencil
 } from 'lucide-react';
 import { KategoriUtama, KATEGORI_COLORS, KATEGORI_BG_COLORS, KATEGORI_UTAMA_LABELS, SUB_KATEGORI_LABELS, SubKategori } from '@/types';
 import { formatDate } from '@/lib/utils';
@@ -259,6 +259,15 @@ export default function DokumenPage() {
                             </span>
                           )}
 
+                          {/* Edit Button */}
+                          <Link 
+                            href={`/dokumen/${doc.id}/edit`}
+                            className="inline-flex items-center justify-center p-2 text-slate-500 hover:bg-slate-100 hover:text-blue-600 rounded-lg transition-colors border border-transparent hover:border-slate-200"
+                            title="Edit Dokumen"
+                          >
+                            <Pencil className="w-5 h-5" />
+                          </Link>
+
                           {/* Delete Button */}
                           <button 
                             onClick={() => deleteDocument(doc.id)}
@@ -368,7 +377,13 @@ export default function DokumenPage() {
                       Kosong
                     </span>
                   )}
-
+                  <Link 
+                    href={`/dokumen/${doc.id}/edit`}
+                    className="inline-flex justify-center items-center p-2 border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-xl transition-colors bg-white shadow-sm"
+                    title="Edit Dokumen"
+                  >
+                    <Pencil className="w-5 h-5" />
+                  </Link>
                   <button 
                     onClick={() => deleteDocument(doc.id)}
                     className="inline-flex justify-center items-center p-2 border border-rose-200 text-rose-500 hover:text-white hover:bg-rose-500 rounded-xl transition-colors bg-white shadow-sm"
