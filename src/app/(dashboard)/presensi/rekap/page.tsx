@@ -251,7 +251,7 @@ export default function RekapPresensiPage() {
           className="inline-flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold text-base transition-all shadow-md hover:shadow-emerald-500/20 disabled:opacity-50 active:scale-95"
         >
           <Download className="w-5 h-5" />
-          <span>Download CSV Rapi</span>
+          <span>Download CSV</span>
         </button>
       </div>
 
