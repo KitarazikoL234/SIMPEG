@@ -45,7 +45,7 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
 
     useEffect(() => {
     // Fetch document details
-    fetch(/api/documents/ + id)
+    fetch('/api/documents/' + id)
       .then(res => res.json())
       .then(json => {
         if (json.success && json.data) {
@@ -161,8 +161,8 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
         ukuranFile,
       };
 
-      const res = await fetch('/api/documents', {
-        method: 'POST',
+      const res = await fetch('/api/documents/' + id, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(docData),
       });
