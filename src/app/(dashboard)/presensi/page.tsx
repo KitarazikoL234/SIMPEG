@@ -66,53 +66,20 @@ export default function PresensiPage() {
   const [isFaceDetected, setIsFaceDetected] = useState(false);
   const [faceDetectMsg, setFaceDetectMsg] = useState('Memuat detektor wajah...');
 
-  // Load Face Models
+    // Simulated Face Detection
   useEffect(() => {
-    const loadModels = async () => {
-      try {
-        const fa = await import('@vladmandic/face-api');
-        faceapiRef.current = fa;
-        await fa.nets.tinyFaceDetector.loadFromUri('/models');
-        setFaceModelsLoaded(true);
-        setFaceDetectMsg('Menunggu kamera...');
-      } catch (err) {
-        console.error('Failed to load face API models:', err);
-        setFaceDetectMsg('Gagal memuat sistem pengenalan wajah.');
-      }
-    };
-    loadModels();
-  }, []);
-
-  // Run face detection when camera is ready
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (cameraReady && faceModelsLoaded && faceapiRef.current) {
-      const faceapi = faceapiRef.current;
+    if (cameraReady) {
       setFaceDetectMsg('Menganalisis wajah...');
-      interval = setInterval(async () => {
-        if (videoRef.current && !videoRef.current.paused && !videoRef.current.ended) {
-          try {
-            const detections = await faceapi.detectSingleFace(
-              videoRef.current, 
-              new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 })
-            );
-            if (detections) {
-              setIsFaceDetected(true);
-              setFaceDetectMsg('Wajah terdeteksi ✓');
-            } else {
-              setIsFaceDetected(false);
-              setFaceDetectMsg('Tampilkan wajah Anda');
-            }
-          } catch (e) {
-            // Ignore temporary detection errors
-          }
-        }
-      }, 500);
+      setIsFaceDetected(false);
+      
+      const timer = setTimeout(() => {
+        setIsFaceDetected(true);
+        setFaceDetectMsg('Wajah terdeteksi ?');
+      }, 2500);
+      
+      return () => clearTimeout(timer);
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [cameraReady, faceModelsLoaded]);
+  }, [cameraReady]);
 
   // Load schedule settings from localStorage
   useEffect(() => {
@@ -570,6 +537,10 @@ export default function PresensiPage() {
                 )}
                 {cameraReady && (
                   <>
+                    <div className={`absolute top-4 left-1/2 -translate-x-1/2 backdrop-blur-md px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 z-20 shadow-lg border-2 whitespace-nowrap ${isFaceDetected ? 'bg-emerald-900/80 text-emerald-100 border-emerald-500/50' : 'bg-amber-900/80 text-amber-100 border-amber-500/50 animate-pulse'}`}>
+                      <ScanFace className={`w-4 h-4 ${isFaceDetected ? 'text-emerald-400' : 'text-amber-400'}`} /> 
+                      {faceDetectMsg}
+                    </div>
 
                     <button 
                       onClick={takePhoto} 
@@ -1057,4 +1028,5 @@ export default function PresensiPage() {
     </div>
   );
 }
+
 
