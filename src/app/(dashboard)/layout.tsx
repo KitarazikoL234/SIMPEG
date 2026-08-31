@@ -409,7 +409,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           
           {/* Beautiful Footer */}
-          <footer className="mt-12 pt-6 border-t border-slate-200/60 flex flex-col sm:flex-row justify-between items-center gap-4 pb-2">
+          <footer className="mt-12 pt-6 border-t border-slate-200/60 flex flex-col sm:flex-row justify-between items-center gap-4 pb-2 sm:pr-20">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center text-white font-black text-[10px]">S</div>
               <p className="text-sm font-semibold text-slate-500">&copy; {new Date().getFullYear()} STIKES Baktara.</p>
@@ -426,3 +426,4 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   );
 }
+
