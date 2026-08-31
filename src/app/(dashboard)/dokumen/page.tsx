@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Search, Plus, FileText, Grid as GridIcon, List as ListIcon,
-  Filter, Download, Eye, MoreVertical, Link as LinkIcon, Trash2, Pencil
+  Filter, Download, Eye, MoreVertical, Link as LinkIcon, Trash2, Pencil, AlertTriangle
 } from 'lucide-react';
 import { KategoriUtama, KATEGORI_COLORS, KATEGORI_BG_COLORS, KATEGORI_UTAMA_LABELS, SUB_KATEGORI_LABELS, SubKategori } from '@/types';
 import { formatDate } from '@/lib/utils';
 
 export default function DokumenPage() {
   const [view, setView] = useState<'grid' | 'list'>('list');
+  const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, docId: string}>({isOpen: false, docId: ''});
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -36,8 +37,13 @@ export default function DokumenPage() {
     fetchDocuments();
   }, [search, activeCategory]);
 
-  const deleteDocument = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus dokumen ini? Tindakan ini tidak dapat dibatalkan.')) return;
+  const confirmDelete = (id: string) => {
+    setConfirmDialog({ isOpen: true, docId: id });
+  };
+
+  const executeDelete = async () => {
+    const id = confirmDialog.docId;
+    setConfirmDialog({ isOpen: false, docId: '' });
     try {
       const res = await fetch(`/api/documents/${id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -270,7 +276,7 @@ export default function DokumenPage() {
 
                           {/* Delete Button */}
                           <button 
-                            onClick={() => deleteDocument(doc.id)}
+                            onClick={() => confirmDelete(doc.id)}
                             className="inline-flex items-center justify-center p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200"
                             title="Hapus Dokumen"
                           >
@@ -385,7 +391,7 @@ export default function DokumenPage() {
                     <Pencil className="w-5 h-5" />
                   </Link>
                   <button 
-                    onClick={() => deleteDocument(doc.id)}
+                    onClick={() => confirmDelete(doc.id)}
                     className="inline-flex justify-center items-center p-2 border border-rose-200 text-rose-500 hover:text-white hover:bg-rose-500 rounded-xl transition-colors bg-white shadow-sm"
                     title="Hapus Dokumen"
                   >
@@ -397,6 +403,37 @@ export default function DokumenPage() {
           })}
         </div>
       )}
+      {/* Custom Confirmation Modal */}
+      {confirmDialog.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-popup">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-5">
+                <AlertTriangle className="w-10 h-10" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Hapus Dokumen?</h3>
+              <p className="text-slate-500 mb-8 leading-relaxed">
+                Apakah Anda yakin ingin menghapus dokumen ini? Tindakan ini tidak dapat dibatalkan.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button 
+                  onClick={() => setConfirmDialog({ isOpen: false, docId: '' })}
+                  className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold transition-all active:scale-95"
+                >
+                  Batal
+                </button>
+                <button 
+                  onClick={executeDelete}
+                  className="flex-1 px-4 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold transition-all shadow-sm active:scale-95"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
