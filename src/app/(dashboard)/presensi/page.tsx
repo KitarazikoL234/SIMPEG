@@ -74,7 +74,7 @@ export default function PresensiPage() {
       
       const timer = setTimeout(() => {
         setIsFaceDetected(true);
-        setFaceDetectMsg('Wajah terdeteksi ?');
+        setFaceDetectMsg('Wajah terdeteksi');
       }, 2500);
       
       return () => clearTimeout(timer);
@@ -1055,6 +1055,7 @@ export default function PresensiPage() {
     </div>
   );
 }
+
 
 
 
