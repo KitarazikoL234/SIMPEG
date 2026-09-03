@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from 'next/link';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
-import { Network, Shield, Briefcase, Users, GraduationCap, User, FileText as FileIcon, AlertTriangle as FileWarningIcon } from "lucide-react";
+import { Network, Shield, Briefcase, Users, GraduationCap, User } from "lucide-react";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
