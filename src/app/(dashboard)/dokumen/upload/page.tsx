@@ -26,6 +26,7 @@ export default function UploadDokumenPage() {
   
   const [formData, setFormData] = useState({
     employeeId: '',
+    taggedEmployees: [] as string[],
     judul: '',
     nomorDokumen: '',
     kategoriUtama: '' as KategoriUtama | '',
@@ -51,29 +52,20 @@ export default function UploadDokumenPage() {
           setUserData(json.user);
           const isAdminOrPimpinan = json.user.role === 'ADMIN' || json.user.role === 'PIMPINAN';
           
-          if (isAdminOrPimpinan) {
-            // Admin/Pimpinan can see all employees
-            fetch('/api/employees?limit=100')
-              .then(res => res.json())
-              .then(empJson => {
-                if (empJson.success && empJson.data?.data) {
-                  setEmployees(empJson.data.data);
-                }
-              })
-              .catch(console.error);
-          } else {
-            // Regular user: auto-select themselves
+          if (!isAdminOrPimpinan) {
+            // Regular user: auto-select themselves as the primary owner
             setFormData(prev => ({ ...prev, employeeId: json.user.employeeId }));
-            // Fetch only their own data for display
-            fetch(`/api/employees/${json.user.employeeId}`)
-              .then(res => res.json())
-              .then(empJson => {
-                if (empJson.success && empJson.data) {
-                  setEmployees([empJson.data]);
-                }
-              })
-              .catch(console.error);
           }
+          
+          // Always fetch all employees for the tagging feature
+          fetch('/api/employees?limit=200')
+            .then(res => res.json())
+            .then(empJson => {
+              if (empJson.success && empJson.data?.data) {
+                setEmployees(empJson.data.data);
+              }
+            })
+            .catch(console.error);
         }
       })
       .catch(console.error);
@@ -216,6 +208,36 @@ export default function UploadDokumenPage() {
                 ))}
               </select>
             </div>
+
+            {formData.employeeId && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Bagikan ke Pegawai Lain (Tag)</label>
+                <p className="text-xs text-slate-500 mb-2">Pilih pegawai lain yang juga terkait dengan dokumen ini (dokumen akan disalin ke arsip mereka).</p>
+                <div className="max-h-40 overflow-y-auto border border-slate-300 rounded-lg p-2 bg-slate-50 space-y-1">
+                  {employees.filter(emp => emp.id !== formData.employeeId).map(emp => (
+                    <label key={emp.id} className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded cursor-pointer transition-colors">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.taggedEmployees.includes(emp.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData(prev => ({ ...prev, taggedEmployees: [...prev.taggedEmployees, emp.id] }));
+                          } else {
+                            setFormData(prev => ({ ...prev, taggedEmployees: prev.taggedEmployees.filter(id => id !== emp.id) }));
+                          }
+                        }}
+                        className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 border-slate-300"
+                      />
+                      <span className="text-sm text-slate-700 font-medium">{emp.nama} <span className="text-slate-400 font-normal">({emp.nip || emp.nidn || '-'})</span></span>
+                    </label>
+                  ))}
+                  {employees.length <= 1 && (
+                    <p className="text-sm text-slate-400 p-2 italic">Tidak ada pegawai lain untuk ditag.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-1">Judul Dokumen *</label>

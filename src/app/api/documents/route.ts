@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       judul, nomorDokumen, kategoriUtama, subKategori,
       tanggalTerbit, masaBerlaku, semester, tahunAkademik,
       tipeFile, filePath, linkRepository, ukuranFile, catatan,
-      employeeId, uploadedById
+      employeeId, uploadedById, taggedEmployees
     } = body;
 
     // Prevent Dosen/Tendik from uploading documents to other employee profiles
@@ -115,26 +115,43 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
+    const documentData = {
+      judul,
+      nomorDokumen,
+      kategoriUtama,
+      subKategori,
+      tanggalTerbit: new Date(tanggalTerbit),
+      masaBerlaku: masaBerlaku ? new Date(masaBerlaku) : null,
+      semester,
+      tahunAkademik,
+      tipeFile: tipeFile || 'UPLOAD',
+      filePath,
+      linkRepository,
+      ukuranFile: ukuranFile ? parseInt(ukuranFile) : null,
+      catatan,
+      uploadedById,
+      status: 'AKTIF',
+    };
+
+    // 1. Create document for the primary employee
     const document = await prisma.document.create({
       data: {
-        judul,
-        nomorDokumen,
-        kategoriUtama,
-        subKategori,
-        tanggalTerbit: new Date(tanggalTerbit),
-        masaBerlaku: masaBerlaku ? new Date(masaBerlaku) : null,
-        semester,
-        tahunAkademik,
-        tipeFile: tipeFile || 'UPLOAD',
-        filePath,
-        linkRepository,
-        ukuranFile: ukuranFile ? parseInt(ukuranFile) : null,
-        catatan,
+        ...documentData,
         employeeId,
-        uploadedById,
-        status: 'AKTIF',
       },
     });
+
+    // 2. If there are tagged employees, create a copy for each of them
+    if (Array.isArray(taggedEmployees) && taggedEmployees.length > 0) {
+      const copies = taggedEmployees.map((id: string) => ({
+        ...documentData,
+        employeeId: id,
+      }));
+      
+      await prisma.document.createMany({
+        data: copies
+      });
+    }
 
     return NextResponse.json({ success: true, data: document });
   } catch (error: any) {
