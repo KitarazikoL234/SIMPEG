@@ -21,6 +21,9 @@ export default function UploadDokumenPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [userData, setUserData] = useState<any>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [taggedFiles, setTaggedFiles] = useState<Record<string, File | null>>({});
+  const [taggedTipeFile, setTaggedTipeFile] = useState<Record<string, 'UPLOAD' | 'LINK'>>({});
+  const [taggedLinks, setTaggedLinks] = useState<Record<string, string>>({});
   const [isDragging, setIsDragging] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
   
@@ -119,37 +122,80 @@ export default function UploadDokumenPage() {
     }
   };
 
+  const handleTaggedFileSelect = (empId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      if (selectedFile.type === 'application/pdf') {
+        setTaggedFiles(prev => ({ ...prev, [empId]: selectedFile }));
+      } else {
+        alert('Hanya file PDF yang diperbolehkan');
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      let filePath = '';
-      let ukuranFile = 0;
+      let mainFilePath = '';
+      let mainUkuranFile = 0;
 
-      // Handle file upload first if needed
+      // Handle main file upload
       if (formData.tipeFile === 'UPLOAD' && file) {
         const uploadData = new FormData();
         uploadData.append('file', file);
-        
-        const uploadRes = await fetch('/api/upload', {
-          method: 'POST',
-          body: uploadData,
-        });
-        
+        const uploadRes = await fetch('/api/upload', { method: 'POST', body: uploadData });
         const uploadJson = await uploadRes.json();
         if (!uploadJson.success) throw new Error(uploadJson.error || 'Upload failed');
-        
-        filePath = uploadJson.data.filePath;
-        ukuranFile = uploadJson.data.ukuranFile;
+        mainFilePath = uploadJson.data.filePath;
+        mainUkuranFile = uploadJson.data.ukuranFile;
       }
+
+      // Handle tagged files upload
+      const processedTaggedEmployees = await Promise.all(
+        formData.taggedEmployees.map(async (empId) => {
+          const tipe = taggedTipeFile[empId] || formData.tipeFile;
+          let customFilePath = mainFilePath;
+          let customUkuranFile = mainUkuranFile;
+          let customLink = formData.linkRepository;
+
+          if (tipe === 'UPLOAD' && taggedFiles[empId]) {
+            const uploadData = new FormData();
+            uploadData.append('file', taggedFiles[empId] as File);
+            const uploadRes = await fetch('/api/upload', { method: 'POST', body: uploadData });
+            const uploadJson = await uploadRes.json();
+            if (!uploadJson.success) throw new Error(uploadJson.error || `Upload failed for ${empId}`);
+            customFilePath = uploadJson.data.filePath;
+            customUkuranFile = uploadJson.data.ukuranFile;
+            customLink = '';
+          } else if (tipe === 'LINK' && taggedLinks[empId]) {
+            customLink = taggedLinks[empId];
+            customFilePath = '';
+            customUkuranFile = 0;
+          } else if (tipe === 'UPLOAD' && !taggedFiles[empId] && formData.tipeFile === 'LINK') {
+              // Edge case: tagged wants UPLOAD but didn't provide file, and main is LINK.
+              // Just fallback to main LINK.
+              return { id: empId };
+          }
+
+          return {
+            id: empId,
+            tipeFile: tipe,
+            filePath: customFilePath,
+            ukuranFile: customUkuranFile,
+            linkRepository: customLink
+          };
+        })
+      );
 
       // Submit document data
       const docData = {
         ...formData,
         masaBerlaku: formData.hasMasaBerlaku ? formData.masaBerlaku : null,
-        filePath,
-        ukuranFile,
+        filePath: mainFilePath,
+        ukuranFile: mainUkuranFile,
+        taggedEmployees: processedTaggedEmployees
       };
 
       const res = await fetch('/api/documents', {
@@ -454,6 +500,89 @@ export default function UploadDokumenPage() {
                 />
               </div>
               <p className="text-xs text-slate-500 mt-2">Pastikan tautan dapat diakses secara publik (tidak memerlukan login).</p>
+            </div>
+          )}
+          
+          {formData.taggedEmployees.length > 0 && (
+            <div className="mt-8 pt-8 border-t border-slate-200">
+              <h3 className="text-md font-bold text-slate-900 mb-4">File Khusus untuk Pegawai yang Ditag</h3>
+              <p className="text-sm text-slate-500 mb-6">
+                Anda dapat mengunggah file yang berbeda untuk setiap pegawai yang ditag. Jika dikosongkan, mereka akan menerima salinan dari File Utama di atas.
+              </p>
+              
+              <div className="space-y-6">
+                {formData.taggedEmployees.map(empId => {
+                  const emp = employees.find(e => e.id === empId);
+                  if (!emp) return null;
+                  
+                  const tipe = taggedTipeFile[empId] || formData.tipeFile;
+                  const tFile = taggedFiles[empId];
+                  const tLink = taggedLinks[empId] || '';
+
+                  return (
+                    <div key={empId} className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-semibold text-slate-800">{emp.nama}</h4>
+                        <div className="flex bg-white rounded-lg border border-slate-200 p-1">
+                          <button
+                            type="button"
+                            onClick={() => setTaggedTipeFile(prev => ({ ...prev, [empId]: 'UPLOAD' }))}
+                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${tipe === 'UPLOAD' ? 'bg-blue-100 text-blue-700' : 'text-slate-500 hover:bg-slate-50'}`}
+                          >
+                            Upload
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setTaggedTipeFile(prev => ({ ...prev, [empId]: 'LINK' }))}
+                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${tipe === 'LINK' ? 'bg-blue-100 text-blue-700' : 'text-slate-500 hover:bg-slate-50'}`}
+                          >
+                            Link
+                          </button>
+                        </div>
+                      </div>
+
+                      {tipe === 'UPLOAD' ? (
+                        <div className="flex items-center gap-4">
+                          <label className="flex-shrink-0 px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors">
+                            <span>Pilih File PDF</span>
+                            <input 
+                              type="file" 
+                              accept="application/pdf"
+                              onChange={(e) => handleTaggedFileSelect(empId, e)}
+                              className="hidden"
+                            />
+                          </label>
+                          <div className="flex-1 min-w-0">
+                            {tFile ? (
+                              <div className="flex items-center gap-2 text-sm text-slate-700 bg-white px-3 py-2 rounded-lg border border-slate-200">
+                                <File className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                <span className="truncate">{tFile.name}</span>
+                                <button 
+                                  type="button" 
+                                  onClick={() => setTaggedFiles(prev => ({ ...prev, [empId]: null }))}
+                                  className="ml-auto text-slate-400 hover:text-red-500 transition-colors"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-slate-400 italic">Menggunakan File Utama...</span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <input
+                          type="url"
+                          placeholder="https://..."
+                          value={tLink}
+                          onChange={(e) => setTaggedLinks(prev => ({ ...prev, [empId]: e.target.value }))}
+                          className="w-full px-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

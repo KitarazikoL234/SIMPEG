@@ -143,10 +143,23 @@ export async function POST(request: Request) {
 
     // 2. If there are tagged employees, create a copy for each of them
     if (Array.isArray(taggedEmployees) && taggedEmployees.length > 0) {
-      const copies = taggedEmployees.map((id: string) => ({
-        ...documentData,
-        employeeId: id,
-      }));
+      const copies = taggedEmployees.map((tag: any) => {
+        if (typeof tag === 'string') {
+          return {
+            ...documentData,
+            employeeId: tag,
+          };
+        } else {
+          return {
+            ...documentData,
+            employeeId: tag.id,
+            tipeFile: tag.tipeFile || documentData.tipeFile,
+            filePath: tag.filePath !== undefined ? tag.filePath : documentData.filePath,
+            linkRepository: tag.linkRepository !== undefined ? tag.linkRepository : documentData.linkRepository,
+            ukuranFile: tag.ukuranFile !== undefined ? tag.ukuranFile : documentData.ukuranFile,
+          };
+        }
+      });
       
       await prisma.document.createMany({
         data: copies
