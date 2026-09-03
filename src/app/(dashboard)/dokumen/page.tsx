@@ -558,31 +558,68 @@ export default function DokumenPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-popup">
             <div className="p-8">
-              <h3 className="text-xl font-bold text-slate-900 mb-4">Tambah Kategori</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-4">Manajemen Kategori</h3>
+              
+              {customCategories.length > 0 && (
+                <div className="mb-6 space-y-2 max-h-48 overflow-y-auto">
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Kategori Kustom Saat Ini</label>
+                  {customCategories.map(cat => (
+                    <div key={cat.id} className="flex justify-between items-center bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                      <span className="text-sm font-medium text-slate-700">{cat.name.replace(/_/g, ' ')}</span>
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Hapus kategori ${cat.name}?`)) return;
+                          try {
+                            const res = await fetch(`/api/categories/${cat.id}`, { method: 'DELETE' });
+                            const data = await res.json();
+                            if (data.success) {
+                              setCustomCategories(customCategories.filter(c => c.id !== cat.id));
+                              if (activeCategory === cat.name) setActiveCategory('SEMUA');
+                            } else {
+                              alert(data.error);
+                            }
+                          } catch (e) {
+                            alert('Gagal menghapus kategori');
+                          }
+                        }}
+                        className="text-red-500 hover:text-red-700 p-1 rounded transition-colors"
+                        title="Hapus Kategori"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Nama Kategori Baru</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Tambah Kategori Baru</label>
                   <input
                     type="text"
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
                     placeholder="Contoh: KEUANGAN"
                     className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-blue-500 focus:border-blue-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddCategory();
+                    }}
                   />
                 </div>
               </div>
-              <div className="flex gap-3 mt-8">
+              <div className="flex gap-3 mt-6">
                 <button 
                   onClick={() => setShowAddCategoryModal(false)}
                   className="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all"
                 >
-                  Batal
+                  Tutup
                 </button>
                 <button 
                   onClick={handleAddCategory}
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all"
+                  disabled={!newCategoryName.trim()}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold transition-all"
                 >
-                  Simpan
+                  Tambah
                 </button>
               </div>
             </div>
