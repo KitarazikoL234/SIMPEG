@@ -68,11 +68,25 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const permanent = searchParams.get('permanent') === 'true';
+
     const document = await prisma.document.findUnique({ where: { id } });
     if (!document) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
 
+    if (permanent) {
+      if (document.tipeFile === 'UPLOAD' && document.filePath) {
+        try {
+          await fs.unlink(path.join(process.cwd(), 'public', document.filePath));
+        } catch (e) {
+          console.error('File to delete not found', e);
+        }
+      }
+      await prisma.document.delete({ where: { id } });
+      return NextResponse.json({ success: true, message: 'Permanently deleted' });
+    }
+
     // Soft delete: Change status to 'DIHAPUS' instead of hard deleting
-    // We don't delete the physical file yet so it can be restored
     await prisma.document.update({ 
       where: { id },
       data: { status: 'DIHAPUS' }

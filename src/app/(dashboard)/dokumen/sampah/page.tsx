@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  Search, Plus, FileText, Grid as GridIcon, List as ListIcon,
-  Filter, Download, Eye, MoreVertical, Link as LinkIcon, Trash2, Pencil, AlertTriangle
+  Search, FileText, Grid as GridIcon, List as ListIcon,
+  Filter, Download, Eye, MoreVertical, Link as LinkIcon, Trash2, AlertTriangle, ArrowLeft, RefreshCcw
 } from 'lucide-react';
 import { KategoriUtama, KATEGORI_COLORS, KATEGORI_BG_COLORS, KATEGORI_UTAMA_LABELS, SUB_KATEGORI_LABELS, SubKategori } from '@/types';
 import { formatDate } from '@/lib/utils';
 
-export default function DokumenPage() {
+export default function SampahPage() {
   const [view, setView] = useState<'grid' | 'list'>('list');
   const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, docId: string}>({isOpen: false, docId: ''});
   const [documents, setDocuments] = useState<any[]>([]);
@@ -22,7 +22,7 @@ export default function DokumenPage() {
     setLoading(true);
     try {
       const catQuery = activeCategory !== 'SEMUA' ? `&kategoriUtama=${activeCategory}` : '';
-      const res = await fetch(`/api/documents?q=${search}&limit=50${catQuery}`);
+      const res = await fetch(`/api/documents?status=DIHAPUS&q=${search}&limit=50${catQuery}`);
       const json = await res.json();
       if (json.success) {
         setDocuments(json.data.data);
@@ -38,16 +38,6 @@ export default function DokumenPage() {
     fetchDocuments();
   }, [search, activeCategory]);
 
-  // Auto-hide toast after 5 seconds
-  useEffect(() => {
-    if (toastMessage.show) {
-      const timer = setTimeout(() => {
-        setToastMessage({ show: false, docId: '', prevStatus: '' });
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [toastMessage.show]);
-
   const confirmDelete = (id: string) => {
     setConfirmDialog({ isOpen: true, docId: id });
   };
@@ -56,38 +46,32 @@ export default function DokumenPage() {
     const id = confirmDialog.docId;
     setConfirmDialog({ isOpen: false, docId: '' });
     try {
-      const res = await fetch(`/api/documents/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/documents/${id}?permanent=true`, { method: 'DELETE' });
       const data = await res.json();
       
       if (res.ok && data.success) {
         setDocuments(documents.filter(doc => doc.id !== id));
-        setToastMessage({ 
-          show: true, 
-          docId: id, 
-          prevStatus: data.previousStatus || 'AKTIF' 
-        });
       } else {
-        alert(data.error || 'Gagal menghapus dokumen');
+        alert(data.error || 'Gagal menghapus dokumen secara permanen');
       }
     } catch (e) {
       alert('Terjadi kesalahan saat menghapus dokumen');
     }
   };
 
-  const undoDelete = async () => {
-    if (!toastMessage.docId) return;
+  const executeRestore = async (id: string) => {
     try {
-      const res = await fetch(`/api/documents/${toastMessage.docId}`, {
+      const res = await fetch(`/api/documents/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: toastMessage.prevStatus || 'AKTIF' })
+        body: JSON.stringify({ status: 'AKTIF' })
       });
       if (res.ok) {
-        fetchDocuments(); // Reload the list
-        setToastMessage({ show: false, docId: '', prevStatus: '' });
+        setDocuments(documents.filter(doc => doc.id !== id));
       }
     } catch (e) {
-      console.error('Failed to undo delete', e);
+      console.error('Failed to restore document', e);
+      alert('Terjadi kesalahan saat memulihkan dokumen');
     }
   };
 
@@ -111,25 +95,14 @@ export default function DokumenPage() {
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Arsip Dokumen</h1>
-          <p className="text-lg text-slate-500 mt-1">Kelola arsip dokumen kepegawaian</p>
-        </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Link 
-            href="/dokumen/sampah" 
-            className="inline-flex flex-1 sm:flex-none justify-center items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-3 rounded-xl text-base font-medium transition-colors border border-slate-200"
-          >
-            <Trash2 className="w-5 h-5" />
-            <span>Tong Sampah</span>
+        <div className="flex items-center gap-4">
+          <Link href="/dokumen" className="p-2 bg-white rounded-lg border border-slate-200 text-slate-500 hover:text-slate-900 transition-colors">
+            <ArrowLeft className="w-5 h-5" />
           </Link>
-          <Link 
-            href="/dokumen/upload" 
-            className="inline-flex flex-1 sm:flex-none justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-base font-medium transition-colors shadow-sm"
-          >
-            <Plus className="w-6 h-6" />
-            <span>Upload Dokumen</span>
-          </Link>
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Tong Sampah</h1>
+            <p className="text-lg text-slate-500 mt-1">Dokumen yang telah dihapus (bisa dipulihkan kembali)</p>
+          </div>
         </div>
       </div>
 
@@ -308,20 +281,20 @@ export default function DokumenPage() {
                             </span>
                           )}
 
-                          {/* Edit Button */}
-                          <Link 
-                            href={`/dokumen/${doc.id}/edit`}
-                            className="inline-flex items-center justify-center p-2 text-slate-500 hover:bg-slate-100 hover:text-blue-600 rounded-lg transition-colors border border-transparent hover:border-slate-200"
-                            title="Edit Dokumen"
+                          {/* Restore Button */}
+                          <button 
+                            onClick={() => executeRestore(doc.id)}
+                            className="inline-flex items-center justify-center p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-transparent hover:border-green-200"
+                            title="Pulihkan Dokumen"
                           >
-                            <Pencil className="w-5 h-5" />
-                          </Link>
+                            <RefreshCcw className="w-5 h-5" />
+                          </button>
 
                           {/* Delete Button */}
                           <button 
                             onClick={() => confirmDelete(doc.id)}
                             className="inline-flex items-center justify-center p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200"
-                            title="Hapus Dokumen"
+                            title="Hapus Permanen"
                           >
                             <Trash2 className="w-5 h-5" />
                           </button>
@@ -426,17 +399,17 @@ export default function DokumenPage() {
                       Kosong
                     </span>
                   )}
-                  <Link 
-                    href={`/dokumen/${doc.id}/edit`}
-                    className="inline-flex justify-center items-center p-2 border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-xl transition-colors bg-white shadow-sm"
-                    title="Edit Dokumen"
+                  <button 
+                    onClick={() => executeRestore(doc.id)}
+                    className="inline-flex justify-center items-center p-2 border border-green-200 text-green-600 hover:text-white hover:bg-green-500 rounded-xl transition-colors bg-white shadow-sm"
+                    title="Pulihkan Dokumen"
                   >
-                    <Pencil className="w-5 h-5" />
-                  </Link>
+                    <RefreshCcw className="w-5 h-5" />
+                  </button>
                   <button 
                     onClick={() => confirmDelete(doc.id)}
                     className="inline-flex justify-center items-center p-2 border border-rose-200 text-rose-500 hover:text-white hover:bg-rose-500 rounded-xl transition-colors bg-white shadow-sm"
-                    title="Hapus Dokumen"
+                    title="Hapus Permanen"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
@@ -454,9 +427,9 @@ export default function DokumenPage() {
               <div className="w-20 h-20 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-5">
                 <AlertTriangle className="w-10 h-10" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Hapus Dokumen?</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Hapus Permanen?</h3>
               <p className="text-slate-500 mb-8 leading-relaxed">
-                Apakah Anda yakin ingin menghapus dokumen ini? Tindakan ini tidak dapat dibatalkan.
+                Apakah Anda yakin ingin menghapus dokumen ini secara permanen? File dan data akan hilang selamanya dan tidak dapat dikembalikan.
               </p>
               <div className="flex gap-3 w-full">
                 <button 
@@ -469,32 +442,10 @@ export default function DokumenPage() {
                   onClick={executeDelete}
                   className="flex-1 px-4 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold transition-all shadow-sm active:scale-95"
                 >
-                  Ya, Hapus
+                  Ya, Hapus Permanen
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Gmail-style Undo Toast */}
-      {toastMessage.show && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 animate-popup">
-          <div className="bg-slate-900 text-white px-6 py-4 rounded-xl shadow-lg flex items-center gap-6">
-            <span className="text-sm font-medium">1 dokumen dipindahkan ke tong sampah.</span>
-            <button 
-              onClick={undoDelete}
-              className="text-amber-400 font-bold text-sm hover:text-amber-300 transition-colors uppercase tracking-wide"
-            >
-              Urungkan
-            </button>
-            <button 
-              onClick={() => setToastMessage({ show: false, docId: '', prevStatus: '' })}
-              className="ml-2 text-slate-400 hover:text-white transition-colors"
-              title="Tutup"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
           </div>
         </div>
       )}
