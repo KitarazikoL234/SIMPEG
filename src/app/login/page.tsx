@@ -12,9 +12,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   
   // Captcha State
-  const [captchaChars, setCaptchaChars] = useState<{char:string, x:number, y:number, rotate:number, color:string}[]>([]);
+  const [captchaChars, setCaptchaChars] = useState<{char:string, x:number, y:number, rotate:number, color:string, fontSize:number}[]>([]);
   const [captchaText, setCaptchaText] = useState("");
   const [captchaLines, setCaptchaLines] = useState<{x1:number, y1:number, x2:number, y2:number}[]>([]);
+  const [captchaDots, setCaptchaDots] = useState<{cx:number, cy:number, r:number}[]>([]);
   const [captchaAnswer, setCaptchaAnswer] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -25,9 +26,7 @@ export default function LoginPage() {
     setMounted(true);
     generateCaptcha();
 
-    // Auto-trigger fingerprint if preferred
     if (localStorage.getItem('preferFingerprint') === 'true') {
-      // Small delay to let the UI render first
       setTimeout(() => {
         handleFingerprintLogin(true);
       }, 500);
@@ -38,31 +37,43 @@ export default function LoginPage() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     let text = '';
     const charMeta = [];
-    const colors = ["#1e293b", "#334155", "#0f172a", "#1d4ed8", "#b91c1c", "#047857"];
+    const colors = ["#1e293b", "#334155", "#0f172a", "#1d4ed8", "#b91c1c", "#047857", "#4338ca", "#b45309"];
     
+    // Vary the horizontal spacing so it's not so predictable
+    let currentX = 10;
     for (let i = 0; i < 5; i++) {
       const char = chars.charAt(Math.floor(Math.random() * chars.length));
       text += char;
       charMeta.push({
         char,
-        x: 15 + (i * 20),
-        y: 35 + (Math.random() * 8 - 4),
-        rotate: Math.random() * 40 - 20,
-        color: colors[Math.floor(Math.random() * colors.length)]
+        x: currentX,
+        y: 35 + (Math.random() * 12 - 6),
+        rotate: Math.random() * 60 - 30, // more rotation
+        color: colors[Math.floor(Math.random() * colors.length)],
+        fontSize: 22 + Math.random() * 8 // random size between 22 and 30
       });
+      currentX += 18 + Math.random() * 6;
     }
     
     setCaptchaText(text);
     setCaptchaChars(charMeta);
     
-    // Generate noise lines
-    const lines = Array.from({length: 4}).map(() => ({
+    // Generate noise lines (more lines, varying lengths)
+    const lines = Array.from({length: 7}).map(() => ({
       x1: Math.random() * 120,
-      y1: Math.random() * 40,
+      y1: Math.random() * 52,
       x2: Math.random() * 120,
-      y2: Math.random() * 40
+      y2: Math.random() * 52
     }));
     setCaptchaLines(lines);
+
+    // Generate noise dots
+    const dots = Array.from({length: 30}).map(() => ({
+      cx: Math.random() * 120,
+      cy: Math.random() * 52,
+      r: Math.random() * 1.5 + 0.5
+    }));
+    setCaptchaDots(dots);
     
     setCaptchaAnswer("");
   };
@@ -246,27 +257,41 @@ export default function LoginPage() {
             <div className="space-y-2 pt-2">
               <label className="text-sm font-bold text-slate-700 ml-1">Keamanan (Captcha)</label>
               <div className="flex items-center gap-3">
-                <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl overflow-hidden shrink-0 w-[120px] h-[52px] relative flex justify-center items-center">
-                  <svg width="120" height="52" viewBox="0 0 120 52" className="absolute inset-0 pointer-events-none">
-                    {/* Noise Lines */}
-                    {captchaLines.map((line, i) => (
-                      <line key={i} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke={i % 2 === 0 ? "#cbd5e1" : "#94a3b8"} strokeWidth="1.5" />
-                    ))}
-                    {/* Characters */}
-                    {captchaChars.map((item, i) => (
-                      <text 
-                        key={i} 
-                        x={item.x} 
-                        y={item.y} 
-                        transform={`rotate(${item.rotate} ${item.x} ${item.y})`}
-                        fontSize="24" 
-                        fontFamily="monospace"
-                        fontWeight="bold"
-                        fill={item.color}
-                      >
-                        {item.char}
-                      </text>
-                    ))}
+                <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl overflow-hidden shrink-0 w-[140px] h-[52px] relative flex justify-center items-center">
+                  <svg width="140" height="52" viewBox="0 0 140 52" className="absolute inset-0 pointer-events-none">
+                    <defs>
+                      <filter id="distort">
+                        <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" result="noise" />
+                        <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" />
+                      </filter>
+                    </defs>
+                    <g filter="url(#distort)">
+                      {/* Background Noise Dots */}
+                      {captchaDots.map((dot, i) => (
+                        <circle key={`dot-${i}`} cx={dot.cx} cy={dot.cy} r={dot.r} fill="#94a3b8" opacity="0.6" />
+                      ))}
+                      
+                      {/* Noise Lines */}
+                      {captchaLines.map((line, i) => (
+                        <line key={`line-${i}`} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke={i % 2 === 0 ? "#cbd5e1" : "#94a3b8"} strokeWidth={Math.random() * 1.5 + 0.5} />
+                      ))}
+                      
+                      {/* Characters */}
+                      {captchaChars.map((item, i) => (
+                        <text 
+                          key={`char-${i}`} 
+                          x={item.x} 
+                          y={item.y} 
+                          transform={`rotate(${item.rotate} ${item.x} ${item.y})`}
+                          fontSize={`${item.fontSize}px`}
+                          fontFamily="monospace"
+                          fontWeight="900"
+                          fill={item.color}
+                        >
+                          {item.char}
+                        </text>
+                      ))}
+                    </g>
                   </svg>
                 </div>
                 <input
