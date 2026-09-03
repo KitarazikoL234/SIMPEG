@@ -120,7 +120,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItemsLainnya = [
     ...(isPimpinan ? [
-      { name: 'Struktur Organisasi', href: '/struktur', icon: Network },
+      { name: 'Struktur Organisasi', href: '/struktur-organisasi', icon: Network },
       { name: 'Laporan', href: '/laporan', icon: PieChart }
     ] : []),
     { name: 'Rekap Presensi', href: '/presensi/rekap', icon: BarChart3 },
@@ -141,6 +141,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (pathname.startsWith('/presensi')) return 'Presensi';
     if (pathname.startsWith('/profil')) return 'Profil Saya';
     if (pathname.startsWith('/pengaturan')) return 'Pengaturan';
+    if (pathname.startsWith('/struktur-organisasi')) return 'Struktur Organisasi';
     return 'SIMPEG';
   };
 
