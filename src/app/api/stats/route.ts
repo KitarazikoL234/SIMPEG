@@ -13,7 +13,10 @@ export async function GET() {
     }
 
     const isAdminOrPimpinan = session.role === 'ADMIN' || session.role === 'PIMPINAN';
-    const employeeWhere = isAdminOrPimpinan ? {} : { employeeId: session.employeeId };
+    const employeeWhere: any = { status: { not: 'DIHAPUS' } };
+    if (!isAdminOrPimpinan) {
+      employeeWhere.employeeId = session.employeeId;
+    }
 
     const [
       totalPegawai,
@@ -35,7 +38,7 @@ export async function GET() {
       prisma.employee.count({ where: { tipeKepegawaian: "DOSEN" } }),
       prisma.employee.count({ where: { tipeKepegawaian: "TENDIK" } }),
       prisma.document.count({ where: employeeWhere }),
-      prisma.document.count({ where: { employeeId: session.employeeId } }),
+      prisma.document.count({ where: { employeeId: session.employeeId, status: { not: 'DIHAPUS' } } }),
       prisma.attendance.count({
         where: {
           employeeId: session.employeeId,

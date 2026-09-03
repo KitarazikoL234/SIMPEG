@@ -43,7 +43,11 @@ export async function GET(request: Request) {
     }
     if (kategoriUtama) where.kategoriUtama = kategoriUtama;
     if (subKategori) where.subKategori = subKategori;
-    if (status) where.status = status;
+    if (status) {
+      where.status = status;
+    } else {
+      where.status = { not: 'DIHAPUS' };
+    }
     if (employeeId) where.employeeId = employeeId;
     if (tahunAkademik) where.tahunAkademik = tahunAkademik;
 

@@ -23,6 +23,7 @@ export async function GET(request: Request) {
       }),
       prisma.document.findMany({
         where: {
+          status: { not: 'DIHAPUS' },
           OR: [
             { judul: { contains: q } },
             { nomorDokumen: { contains: q } }

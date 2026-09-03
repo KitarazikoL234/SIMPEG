@@ -14,6 +14,7 @@ export async function GET(
 
     const where: Prisma.DocumentWhereInput = {
       employeeId: id,
+      status: { not: 'DIHAPUS' },
       ...(semester && { semester }),
       ...(tahunAkademik && { tahunAkademik }),
     };

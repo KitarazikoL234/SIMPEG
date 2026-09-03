@@ -16,6 +16,7 @@ export default function DokumenPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('SEMUA');
+  const [toastMessage, setToastMessage] = useState<{show: boolean, docId: string, prevStatus: string}>({show: false, docId: '', prevStatus: ''});
 
   const fetchDocuments = async () => {
     setLoading(true);
@@ -37,6 +38,16 @@ export default function DokumenPage() {
     fetchDocuments();
   }, [search, activeCategory]);
 
+  // Auto-hide toast after 5 seconds
+  useEffect(() => {
+    if (toastMessage.show) {
+      const timer = setTimeout(() => {
+        setToastMessage({ show: false, docId: '', prevStatus: '' });
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage.show]);
+
   const confirmDelete = (id: string) => {
     setConfirmDialog({ isOpen: true, docId: id });
   };
@@ -46,14 +57,37 @@ export default function DokumenPage() {
     setConfirmDialog({ isOpen: false, docId: '' });
     try {
       const res = await fetch(`/api/documents/${id}`, { method: 'DELETE' });
-      if (res.ok) {
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
         setDocuments(documents.filter(doc => doc.id !== id));
+        setToastMessage({ 
+          show: true, 
+          docId: id, 
+          prevStatus: data.previousStatus || 'AKTIF' 
+        });
       } else {
-        const data = await res.json();
         alert(data.error || 'Gagal menghapus dokumen');
       }
     } catch (e) {
       alert('Terjadi kesalahan saat menghapus dokumen');
+    }
+  };
+
+  const undoDelete = async () => {
+    if (!toastMessage.docId) return;
+    try {
+      const res = await fetch(`/api/documents/${toastMessage.docId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: toastMessage.prevStatus || 'AKTIF' })
+      });
+      if (res.ok) {
+        fetchDocuments(); // Reload the list
+        setToastMessage({ show: false, docId: '', prevStatus: '' });
+      }
+    } catch (e) {
+      console.error('Failed to undo delete', e);
     }
   };
 
@@ -430,6 +464,28 @@ export default function DokumenPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gmail-style Undo Toast */}
+      {toastMessage.show && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 animate-popup">
+          <div className="bg-slate-900 text-white px-6 py-4 rounded-xl shadow-lg flex items-center gap-6">
+            <span className="text-sm font-medium">1 dokumen dipindahkan ke tong sampah.</span>
+            <button 
+              onClick={undoDelete}
+              className="text-amber-400 font-bold text-sm hover:text-amber-300 transition-colors uppercase tracking-wide"
+            >
+              Urungkan
+            </button>
+            <button 
+              onClick={() => setToastMessage({ show: false, docId: '', prevStatus: '' })}
+              className="ml-2 text-slate-400 hover:text-white transition-colors"
+              title="Tutup"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
           </div>
         </div>
       )}
