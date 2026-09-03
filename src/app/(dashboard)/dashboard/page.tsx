@@ -31,11 +31,19 @@ export default function DashboardPage() {
     });
   }, []);
 
+  const rawChartData = stats?.dokumenPerKategori || [12, 19, 3, 5, 2];
+  const totalDocs = rawChartData.reduce((a: number, b: number) => a + b, 0);
+  const baseLabels = ['Pendidikan', 'Penelitian', 'Pengabdian', 'Penunjang', 'Kepegawaian'];
+  
   const doughnutData = {
-    labels: ['Pendidikan', 'Penelitian', 'Pengabdian', 'Penunjang', 'Kepegawaian'],
+    labels: baseLabels.map((label, i) => {
+      const val = rawChartData[i];
+      const pct = totalDocs > 0 ? Math.round((val / totalDocs) * 100) : 0;
+      return `${label} (${pct}%)`;
+    }),
     datasets: [
       {
-        data: stats?.dokumenPerKategori || [12, 19, 3, 5, 2],
+        data: rawChartData,
         backgroundColor: [
           '#3B82F6', // Blue
           '#8B5CF6', // Violet
@@ -58,7 +66,17 @@ export default function DashboardPage() {
           padding: 20,
           font: {
             family: "'Inter', sans-serif",
-            size: 12
+            size: 13,
+            weight: '500'
+          }
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const label = context.label || '';
+            const value = context.parsed || 0;
+            return ` ${label}: ${value} Dokumen`;
           }
         }
       }
