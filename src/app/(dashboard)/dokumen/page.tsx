@@ -112,7 +112,7 @@ export default function DokumenPage() {
                 <select
                   value={activeCategory}
                   onChange={(e) => setActiveCategory(e.target.value)}
-                  className="pl-9 pr-8 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none outline-none cursor-pointer"
+                  className="pl-9 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none outline-none cursor-pointer"
                 >
                   <option value="SEMUA">Semua Kategori</option>
                   {Object.keys(KATEGORI_UTAMA_LABELS).map((kat) => (
