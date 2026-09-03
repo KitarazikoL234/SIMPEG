@@ -119,11 +119,18 @@ model TeachingHistory {
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 }
 
+model DocumentCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  color     String?  @default("#3B82F6")
+  createdAt DateTime @default(now())
+}
+
 model Document {
   id              String   @id @default(uuid())
   judul           String
   nomorDokumen    String?
-  kategoriUtama   String   // PENDIDIKAN, PENELITIAN, PENGABDIAN, PENUNJANG, KEPEGAWAIAN
+  kategoriUtama   String   // PENDIDIKAN, PENELITIAN, PENGABDIAN, PENUNJANG, KEPEGAWAIAN, dll
   subKategori     String   // SK_MENGAJAR, SK_PEMBIMBING, etc.
   tanggalTerbit   DateTime
   masaBerlaku     DateTime?

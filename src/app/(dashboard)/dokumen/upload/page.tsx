@@ -47,28 +47,37 @@ export default function UploadDokumenPage() {
   const tahunOptions = generateTahunAkademikOptions();
 
   useEffect(() => {
-    // Fetch current user info
+    // Fetch user role for default employee assignment
     fetch('/api/auth/me')
       .then(res => res.json())
-      .then(json => {
-        if (json.success) {
-          setUserData(json.user);
-          const isAdminOrPimpinan = json.user.role === 'ADMIN' || json.user.role === 'PIMPINAN';
+      .then(data => {
+        if (data.success && data.user) {
+          const u = data.user;
+          setUserData(u);
           
-          if (!isAdminOrPimpinan) {
-            // Regular user: auto-select themselves as the primary owner
-            setFormData(prev => ({ ...prev, employeeId: json.user.employeeId }));
+          if (u.role !== 'ADMIN' && u.role !== 'PIMPINAN' && u.employeeId) {
+            setFormData(prev => ({ ...prev, employeeId: u.employeeId! }));
           }
-          
-          // Always fetch all employees for the tagging feature
-          fetch('/api/employees?limit=200')
-            .then(res => res.json())
-            .then(empJson => {
-              if (empJson.success && empJson.data?.data) {
-                setEmployees(empJson.data.data);
-              }
-            })
-            .catch(console.error);
+        }
+      })
+      .catch(console.error);
+
+    // Fetch employees for dropdown (even non-admins need this for tagging)
+    fetch('/api/employees?limit=200')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data?.data) {
+          setEmployees(data.data.data);
+        }
+      })
+      .catch(console.error);
+
+    // Fetch custom categories
+    fetch('/api/categories')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setCustomCategories(data.data);
         }
       })
       .catch(console.error);
@@ -311,24 +320,40 @@ export default function UploadDokumenPage() {
                 {Object.values(KategoriUtama).map(cat => (
                   <option key={cat} value={cat}>{KATEGORI_UTAMA_LABELS[cat as KategoriUtama]}</option>
                 ))}
+                {customCategories.map(cat => (
+                  <option key={cat.id} value={cat.name}>{cat.name.replace(/_/g, ' ')}</option>
+                ))}
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Sub Kategori *</label>
-              <select
-                name="subKategori"
-                required
-                value={formData.subKategori}
-                onChange={handleChange}
-                disabled={!formData.kategoriUtama}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-slate-50 disabled:text-slate-400"
-              >
-                <option value="">-- Pilih Sub Kategori --</option>
-                {formData.kategoriUtama && KATEGORI_SUB_MAP[formData.kategoriUtama as KategoriUtama]?.map(sub => (
-                  <option key={sub} value={sub}>{SUB_KATEGORI_LABELS[sub] || sub}</option>
-                ))}
-              </select>
+              {Object.values(KategoriUtama).includes(formData.kategoriUtama as any) ? (
+                <select
+                  name="subKategori"
+                  required
+                  value={formData.subKategori}
+                  onChange={handleChange}
+                  disabled={!formData.kategoriUtama}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-slate-50 disabled:text-slate-400"
+                >
+                  <option value="">-- Pilih Sub Kategori --</option>
+                  {formData.kategoriUtama && KATEGORI_SUB_MAP[formData.kategoriUtama as KategoriUtama]?.map(sub => (
+                    <option key={sub} value={sub}>{SUB_KATEGORI_LABELS[sub] || sub}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  name="subKategori"
+                  required
+                  value={formData.subKategori}
+                  onChange={handleChange}
+                  disabled={!formData.kategoriUtama}
+                  placeholder={formData.kategoriUtama ? "Ketik sub kategori manual..." : "Pilih kategori utama dulu"}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-slate-50 disabled:text-slate-400"
+                />
+              )}
             </div>
 
             <div>

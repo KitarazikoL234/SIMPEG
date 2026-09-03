@@ -18,6 +18,11 @@ export default function DokumenPage() {
   const [activeCategory, setActiveCategory] = useState<string>('SEMUA');
   const [toastMessage, setToastMessage] = useState<{show: boolean, docId: string, prevStatus: string}>({show: false, docId: '', prevStatus: ''});
 
+  const [customCategories, setCustomCategories] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState<string>('');
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
   const fetchDocuments = async () => {
     setLoading(true);
     try {
@@ -37,6 +42,39 @@ export default function DokumenPage() {
   useEffect(() => {
     fetchDocuments();
   }, [search, activeCategory]);
+
+  useEffect(() => {
+    // Fetch custom categories
+    fetch('/api/categories').then(res => res.json()).then(data => {
+      if (data.success) setCustomCategories(data.data);
+    }).catch(console.error);
+    
+    // Fetch user role
+    fetch('/api/auth/me').then(res => res.json()).then(data => {
+      if (data.success && data.user) setUserRole(data.user.role);
+    }).catch(console.error);
+  }, []);
+
+  const handleAddCategory = async () => {
+    if (!newCategoryName) return;
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCategoryName })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCustomCategories([...customCategories, data.data]);
+        setShowAddCategoryModal(false);
+        setNewCategoryName('');
+      } else {
+        alert(data.error);
+      }
+    } catch (e) {
+      alert('Gagal menambah kategori');
+    }
+  };
 
   // Auto-hide toast after 5 seconds
   useEffect(() => {
@@ -148,25 +186,42 @@ export default function DokumenPage() {
           />
         </div>
             <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
-              <div className="relative shrink-0">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Filter className="h-4 w-4 text-slate-400" />
+              <div className="flex gap-2 shrink-0">
+                <div className="relative shrink-0">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Filter className="h-4 w-4 text-slate-400" />
+                  </div>
+                  <select
+                    value={activeCategory}
+                    onChange={(e) => setActiveCategory(e.target.value)}
+                    className="pl-9 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none outline-none cursor-pointer"
+                  >
+                    <option value="SEMUA">Semua Kategori</option>
+                    {Object.keys(KATEGORI_UTAMA_LABELS).map((kat) => (
+                      <option key={kat} value={kat}>
+                        {KATEGORI_UTAMA_LABELS[kat as KategoriUtama]}
+                      </option>
+                    ))}
+                    {customCategories.map((kat) => (
+                      <option key={kat.id} value={kat.name}>
+                        {kat.name.replace(/_/g, ' ')}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
                 </div>
-                <select
-                  value={activeCategory}
-                  onChange={(e) => setActiveCategory(e.target.value)}
-                  className="pl-9 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none outline-none cursor-pointer"
-                >
-                  <option value="SEMUA">Semua Kategori</option>
-                  {Object.keys(KATEGORI_UTAMA_LABELS).map((kat) => (
-                    <option key={kat} value={kat}>
-                      {KATEGORI_UTAMA_LABELS[kat as KategoriUtama]}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
+                
+                {(userRole === 'ADMIN' || userRole === 'PIMPINAN') && (
+                  <button
+                    onClick={() => setShowAddCategoryModal(true)}
+                    className="p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl border border-blue-200 transition-colors"
+                    title="Tambah Kategori Baru"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                )}
               </div>
               <div className="h-8 w-px bg-slate-300 mx-1 shrink-0"></div>
               <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200 shrink-0">
@@ -495,6 +550,42 @@ export default function DokumenPage() {
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
+          </div>
+        </div>
+      )}
+      {/* Add Category Modal */}
+      {showAddCategoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-popup">
+            <div className="p-8">
+              <h3 className="text-xl font-bold text-slate-900 mb-4">Tambah Kategori</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Nama Kategori Baru</label>
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Contoh: KEUANGAN"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-8">
+                <button 
+                  onClick={() => setShowAddCategoryModal(false)}
+                  className="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all"
+                >
+                  Batal
+                </button>
+                <button 
+                  onClick={handleAddCategory}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all"
+                >
+                  Simpan
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
