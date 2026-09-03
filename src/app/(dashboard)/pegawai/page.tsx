@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams, Suspense } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getInitials } from '@/lib/utils';
 import { KategoriUtama, StatusKepegawaian, TipeKepegawaian } from '@/types';
 
