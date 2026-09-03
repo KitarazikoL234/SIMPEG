@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Eye, EyeOff, AlertCircle, ArrowRight, ShieldCheck, Database, Fingerprint, RefreshCcw } from "lucide-react";
 
 export default function LoginPage() {
@@ -21,6 +22,14 @@ export default function LoginPage() {
   useEffect(() => {
     setMounted(true);
     generateCaptcha();
+
+    // Auto-trigger fingerprint if preferred
+    if (localStorage.getItem('preferFingerprint') === 'true') {
+      // Small delay to let the UI render first
+      setTimeout(() => {
+        handleFingerprintLogin(true);
+      }, 500);
+    }
   }, []);
 
   const generateCaptcha = () => {
@@ -64,10 +73,9 @@ export default function LoginPage() {
     }
   };
 
-  const handleFingerprintLogin = async () => {
+  const handleFingerprintLogin = async (isAuto = false) => {
     try {
       if (window.PublicKeyCredential) {
-        // Memanggil WebAuthn API untuk memunculkan dialog sidik jari native (Windows Hello / Mac TouchID / Android Fingerprint)
         await navigator.credentials.get({
           publicKey: {
             challenge: new Uint8Array(32),
@@ -77,25 +85,21 @@ export default function LoginPage() {
           }
         });
         
-        // Simulasi jika berhasil
+        localStorage.setItem('preferFingerprint', 'true');
         alert('Autentikasi sidik jari berhasil!');
         router.push("/dashboard");
       } else {
-        alert('Perangkat/Browser Anda tidak mendukung Autentikasi Sidik Jari (WebAuthn).');
+        if (!isAuto) alert('Perangkat/Browser Anda tidak mendukung Autentikasi Sidik Jari (WebAuthn).');
       }
     } catch (e: any) {
-      if (e.name === 'NotAllowedError') {
-        alert('Autentikasi dibatalkan atau sidik jari tidak dikenali.');
-      } else {
-        alert('Gagal menggunakan sidik jari: Pastikan sidik jari/PIN Windows Hello atau Passkey sudah diatur di perangkat Anda.');
+      // If it was an auto-prompt and user cancelled, just fail silently so they can use password
+      if (!isAuto) {
+        if (e.name === 'NotAllowedError') {
+          alert('Autentikasi dibatalkan atau sidik jari tidak dikenali.');
+        } else {
+          alert('Gagal menggunakan sidik jari. Pastikan sidik jari Anda sudah diatur.');
+        }
       }
-    }
-  };
-
-  const handleForgotPassword = () => {
-    const userInput = prompt("Masukkan NIP atau Username Anda untuk mengatur ulang kata sandi:");
-    if (userInput && userInput.trim() !== "") {
-      alert(`Tautan reset password telah dikirim ke email yang terdaftar untuk akun "${userInput}".`);
     }
   };
 
@@ -185,13 +189,12 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1 mb-1">
                 <label className="text-sm font-bold text-slate-700">Password</label>
-                <button 
-                  type="button" 
-                  onClick={handleForgotPassword}
+                <Link 
+                  href="/reset-password"
                   className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
                 >
                   Lupa Password?
-                </button>
+                </Link>
               </div>
               <div className="relative">
                 <input
@@ -265,13 +268,17 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                onClick={handleFingerprintLogin}
+                onClick={() => handleFingerprintLogin(false)}
                 className="w-full flex items-center justify-center gap-2 bg-slate-800 text-white font-bold py-3.5 rounded-2xl transition-all hover:bg-slate-900 hover:shadow-lg hover:shadow-slate-800/20 active:scale-[0.98]"
               >
                 <Fingerprint className="w-5 h-5" />
                 <span>Masuk dengan Sidik Jari</span>
               </button>
             </div>
+
+            <p className="text-center text-sm font-medium text-slate-500 pt-4">
+              Belum punya akun? <Link href="/register" className="text-blue-600 hover:text-blue-700 font-bold">Daftar sekarang</Link>
+            </p>
           </form>
         </div>
       </div>
