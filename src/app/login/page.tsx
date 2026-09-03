@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   
   // Captcha State
+  const [captchaChars, setCaptchaChars] = useState<{char:string, x:number, y:number, rotate:number, color:string}[]>([]);
   const [captchaText, setCaptchaText] = useState("");
   const [captchaLines, setCaptchaLines] = useState<{x1:number, y1:number, x2:number, y2:number}[]>([]);
   const [captchaAnswer, setCaptchaAnswer] = useState("");
@@ -36,10 +37,23 @@ export default function LoginPage() {
   const generateCaptcha = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     let text = '';
+    const charMeta = [];
+    const colors = ["#1e293b", "#334155", "#0f172a", "#1d4ed8", "#b91c1c", "#047857"];
+    
     for (let i = 0; i < 5; i++) {
-      text += chars.charAt(Math.floor(Math.random() * chars.length));
+      const char = chars.charAt(Math.floor(Math.random() * chars.length));
+      text += char;
+      charMeta.push({
+        char,
+        x: 15 + (i * 20),
+        y: 35 + (Math.random() * 8 - 4),
+        rotate: Math.random() * 40 - 20,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      });
     }
+    
     setCaptchaText(text);
+    setCaptchaChars(charMeta);
     
     // Generate noise lines
     const lines = Array.from({length: 4}).map(() => ({
@@ -239,28 +253,20 @@ export default function LoginPage() {
                       <line key={i} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke={i % 2 === 0 ? "#cbd5e1" : "#94a3b8"} strokeWidth="1.5" />
                     ))}
                     {/* Characters */}
-                    {captchaText.split('').map((char, i) => {
-                      const x = 15 + (i * 20);
-                      const y = 35 + (Math.random() * 8 - 4);
-                      const rotate = Math.random() * 40 - 20;
-                      // Generate a dark, legible color for text
-                      const colors = ["#1e293b", "#334155", "#0f172a", "#1d4ed8", "#b91c1c", "#047857"];
-                      const color = colors[Math.floor(Math.random() * colors.length)];
-                      return (
-                        <text 
-                          key={i} 
-                          x={x} 
-                          y={y} 
-                          transform={`rotate(${rotate} ${x} ${y})`}
-                          fontSize="24" 
-                          fontFamily="monospace"
-                          fontWeight="bold"
-                          fill={color}
-                        >
-                          {char}
-                        </text>
-                      );
-                    })}
+                    {captchaChars.map((item, i) => (
+                      <text 
+                        key={i} 
+                        x={item.x} 
+                        y={item.y} 
+                        transform={`rotate(${item.rotate} ${item.x} ${item.y})`}
+                        fontSize="24" 
+                        fontFamily="monospace"
+                        fontWeight="bold"
+                        fill={item.color}
+                      >
+                        {item.char}
+                      </text>
+                    ))}
                   </svg>
                 </div>
                 <input
