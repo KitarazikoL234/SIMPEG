@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  Search, FileText, Grid as GridIcon, List as ListIcon,
+  Search, FileText, Grid as GridIcon, List as ListIcon, Plus,
   Filter, Download, Eye, MoreVertical, Link as LinkIcon, Trash2, AlertTriangle, ArrowLeft, RefreshCcw
 } from 'lucide-react';
 import { KategoriUtama, KATEGORI_COLORS, KATEGORI_BG_COLORS, KATEGORI_UTAMA_LABELS, SUB_KATEGORI_LABELS, SubKategori } from '@/types';
@@ -167,17 +167,10 @@ export default function SampahPage() {
       ) : documents.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-16 flex flex-col items-center justify-center text-center">
           <div className="w-20 h-20 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-5">
-            <FileText className="w-10 h-10" />
+            <Trash2 className="w-10 h-10" />
           </div>
-          <h3 className="text-xl font-medium text-slate-900 mb-2">Tidak ada dokumen</h3>
-          <p className="text-lg text-slate-500 mb-8">Belum ada dokumen yang diupload atau tidak sesuai kriteria pencarian.</p>
-          <Link 
-            href="/dokumen/upload" 
-            className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl text-base font-medium transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            Upload Dokumen Pertama
-          </Link>
+          <h3 className="text-xl font-medium text-slate-900 mb-2">Tong sampah kosong</h3>
+          <p className="text-lg text-slate-500">Tidak ada dokumen yang telah dihapus.</p>
         </div>
       ) : view === 'list' ? (
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
