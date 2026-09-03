@@ -214,13 +214,40 @@ export default function DokumenPage() {
                 </div>
                 
                 {(userRole === 'ADMIN' || userRole === 'PIMPINAN') && (
-                  <button
-                    onClick={() => setShowAddCategoryModal(true)}
-                    className="p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl border border-blue-200 transition-colors"
-                    title="Tambah Kategori Baru"
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setShowAddCategoryModal(true)}
+                      className="p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl border border-blue-200 transition-colors"
+                      title="Kelola Kategori Kustom"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                    {customCategories.some(c => c.name === activeCategory) && (
+                      <button
+                        onClick={async () => {
+                          const cat = customCategories.find(c => c.name === activeCategory);
+                          if (!cat) return;
+                          if (!confirm(`Hapus kategori ${cat.name}? Dokumen yang ada tidak akan terhapus.`)) return;
+                          try {
+                            const res = await fetch(`/api/categories/${cat.id}`, { method: 'DELETE' });
+                            const data = await res.json();
+                            if (data.success) {
+                              setCustomCategories(customCategories.filter(c => c.id !== cat.id));
+                              setActiveCategory('SEMUA');
+                            } else {
+                              alert(data.error);
+                            }
+                          } catch (e) {
+                            alert('Gagal menghapus kategori');
+                          }
+                        }}
+                        className="p-2.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl border border-red-200 transition-colors flex items-center gap-2"
+                        title="Hapus Kategori Ini"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
               <div className="h-8 w-px bg-slate-300 mx-1 shrink-0"></div>
