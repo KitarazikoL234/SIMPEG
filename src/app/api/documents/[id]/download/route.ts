@@ -30,9 +30,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       const fileBuffer = fs.readFileSync(fullPath);
       const fileName = path.basename(document.filePath);
       
+      const url = new URL(request.url);
+      const isView = url.searchParams.get('view') === 'true';
+      
       return new NextResponse(fileBuffer, {
         headers: {
-          'Content-Disposition': `attachment; filename="${fileName}"`,
+          'Content-Disposition': isView ? `inline; filename="${fileName}"` : `attachment; filename="${fileName}"`,
           'Content-Type': 'application/pdf',
         },
       });

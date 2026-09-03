@@ -225,8 +225,8 @@ export default function DokumenPage() {
                         <div className="flex justify-end gap-3">
                           {/* Preview Link */}
                           <a 
-                            href={`/api/documents/${doc.id}/download`} 
-                            target="_blank" 
+                            href={`/api/documents/${doc.id}/download?view=true`} 
+                            target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 hover:text-blue-700 hover:bg-blue-50 hover:border-blue-300 rounded-lg transition-colors bg-white shadow-sm"
                             title="Lihat"
@@ -345,8 +345,8 @@ export default function DokumenPage() {
                 
                 <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-between items-center gap-2">
                   <a 
-                    href={`/api/documents/${doc.id}/download`} 
-                    target="_blank" 
+                    href={`/api/documents/${doc.id}/download?view=true`} 
+                    target="_blank"
                     rel="noreferrer"
                     className="flex-1 inline-flex justify-center items-center gap-2 px-3 py-2 border border-slate-300 text-slate-700 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors bg-white font-medium text-sm"
                     title="Lihat"
