@@ -134,15 +134,6 @@ function EmployeeListContent() {
             </div>
           </div>
           <select 
-            value={tipe} 
-            onChange={(e) => setTipe(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-          >
-            <option value="">Semua Tipe</option>
-            <option value="DOSEN">Dosen</option>
-            <option value="TENDIK">Tendik</option>
-          </select>
-          <select 
             value={status} 
             onChange={(e) => setStatus(e.target.value)}
             className="px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
