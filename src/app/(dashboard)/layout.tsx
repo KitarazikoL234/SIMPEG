@@ -18,7 +18,8 @@ import {
   Camera,
   Bell,
   PieChart,
-  LifeBuoy
+  LifeBuoy,
+  Network
 } from 'lucide-react';
 import Chatbot from '@/components/Chatbot';
 
@@ -118,7 +119,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   const navItemsLainnya = [
-    ...(isPimpinan ? [{ name: 'Laporan', href: '/laporan', icon: PieChart }] : []),
+    ...(isPimpinan ? [
+      { name: 'Struktur Organisasi', href: '/struktur', icon: Network },
+      { name: 'Laporan', href: '/laporan', icon: PieChart }
+    ] : []),
     { name: 'Rekap Presensi', href: '/presensi/rekap', icon: BarChart3 },
     { name: 'Bantuan', href: '/bantuan', icon: LifeBuoy },
     { name: 'Pengaturan', href: '/pengaturan', icon: Settings },
