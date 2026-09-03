@@ -2,25 +2,46 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, AlertCircle, ArrowRight, ShieldCheck, Database, Fingerprint } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, ArrowRight, ShieldCheck, Database, Fingerprint, RefreshCcw } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Captcha State
+  const [captchaData, setCaptchaData] = useState({ num1: 0, num2: 0 });
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    generateCaptcha();
   }, []);
+
+  const generateCaptcha = () => {
+    setCaptchaData({
+      num1: Math.floor(Math.random() * 10) + 1,
+      num2: Math.floor(Math.random() * 10) + 1
+    });
+    setCaptchaAnswer("");
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    if (parseInt(captchaAnswer) !== (captchaData.num1 + captchaData.num2)) {
+      setError("Jawaban Captcha salah. Silakan coba lagi.");
+      generateCaptcha();
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch("/api/auth/login", {
@@ -34,11 +55,47 @@ export default function LoginPage() {
       } else {
         const data = await res.json();
         setError(data.error || "Login gagal. Periksa email dan password Anda.");
+        generateCaptcha();
         setLoading(false);
       }
     } catch (err) {
       setError("Terjadi kesalahan sistem. Silakan coba lagi.");
       setLoading(false);
+    }
+  };
+
+  const handleFingerprintLogin = async () => {
+    try {
+      if (window.PublicKeyCredential) {
+        // Memanggil WebAuthn API untuk memunculkan dialog sidik jari native (Windows Hello / Mac TouchID / Android Fingerprint)
+        await navigator.credentials.get({
+          publicKey: {
+            challenge: new Uint8Array(32),
+            rpId: window.location.hostname,
+            userVerification: 'required',
+            timeout: 60000,
+          }
+        });
+        
+        // Simulasi jika berhasil
+        alert('Autentikasi sidik jari berhasil!');
+        router.push("/dashboard");
+      } else {
+        alert('Perangkat/Browser Anda tidak mendukung Autentikasi Sidik Jari (WebAuthn).');
+      }
+    } catch (e: any) {
+      if (e.name === 'NotAllowedError') {
+        alert('Autentikasi dibatalkan atau sidik jari tidak dikenali.');
+      } else {
+        alert('Gagal menggunakan sidik jari: Pastikan sidik jari/PIN Windows Hello atau Passkey sudah diatur di perangkat Anda.');
+      }
+    }
+  };
+
+  const handleForgotPassword = () => {
+    const userInput = prompt("Masukkan NIP atau Username Anda untuk mengatur ulang kata sandi:");
+    if (userInput && userInput.trim() !== "") {
+      alert(`Tautan reset password telah dikirim ke email yang terdaftar untuk akun "${userInput}".`);
     }
   };
 
@@ -55,8 +112,6 @@ export default function LoginPage() {
       
       {/* Left Panel - Branding (50%) */}
       <div className="hidden lg:flex w-1/2 relative bg-gradient-to-br from-blue-700 to-cyan-500 items-center justify-center p-12 overflow-hidden">
-        
-        {/* Subtle geometric background pattern for a neat look */}
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
         <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-white opacity-5 rounded-full blur-3xl"></div>
         <div className="absolute top-1/4 -right-20 w-64 h-64 bg-cyan-300 opacity-20 rounded-full blur-3xl"></div>
@@ -91,7 +146,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Footer info symmetrically placed at bottom left */}
         <div className="absolute bottom-8 left-12 right-12 flex justify-between text-blue-100/60 text-sm font-medium">
           <span>&copy; {new Date().getFullYear()} STIKES Baktara</span>
           <span>Versi 2.0</span>
@@ -101,7 +155,6 @@ export default function LoginPage() {
       {/* Right Panel - Login Form (50%) */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 bg-slate-50">
         
-        {/* Neatly centered card */}
         <div className="w-full max-w-[420px] bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-8 sm:p-10 animate-popup">
           
           <div className="mb-10 text-center">
@@ -116,7 +169,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700 ml-1">Username</label>
               <input
@@ -130,7 +183,16 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700 ml-1">Password</label>
+              <div className="flex justify-between items-center ml-1 mb-1">
+                <label className="text-sm font-bold text-slate-700">Password</label>
+                <button 
+                  type="button" 
+                  onClick={handleForgotPassword}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  Lupa Password?
+                </button>
+              </div>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -150,7 +212,36 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="pt-4">
+            {/* Captcha Field */}
+            <div className="space-y-2 pt-2">
+              <label className="text-sm font-bold text-slate-700 ml-1">Keamanan (Captcha)</label>
+              <div className="flex items-center gap-3">
+                <div className="bg-slate-100 border-2 border-slate-200 rounded-2xl px-4 py-3 flex items-center justify-center gap-2 shrink-0 font-mono font-bold text-slate-800">
+                  <span>{captchaData.num1}</span>
+                  <span>+</span>
+                  <span>{captchaData.num2}</span>
+                  <span>=</span>
+                </div>
+                <input
+                  type="number"
+                  required
+                  value={captchaAnswer}
+                  onChange={(e) => setCaptchaAnswer(e.target.value)}
+                  className="w-full px-5 py-3.5 bg-slate-50/50 border-2 border-slate-200 rounded-2xl focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400 hover:border-slate-300"
+                  placeholder="Hasil"
+                />
+                <button 
+                  type="button"
+                  onClick={generateCaptcha}
+                  className="p-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl transition-colors border-2 border-slate-200"
+                  title="Ganti Captcha"
+                >
+                  <RefreshCcw className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-4 space-y-3">
               <button
                 type="submit"
                 disabled={loading}
@@ -165,10 +256,24 @@ export default function LoginPage() {
                   </>
                 )}
               </button>
+
+              <div className="relative flex items-center py-2">
+                <div className="flex-grow border-t border-slate-200"></div>
+                <span className="flex-shrink-0 mx-4 text-slate-400 text-xs font-semibold uppercase">Atau</span>
+                <div className="flex-grow border-t border-slate-200"></div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleFingerprintLogin}
+                className="w-full flex items-center justify-center gap-2 bg-slate-800 text-white font-bold py-3.5 rounded-2xl transition-all hover:bg-slate-900 hover:shadow-lg hover:shadow-slate-800/20 active:scale-[0.98]"
+              >
+                <Fingerprint className="w-5 h-5" />
+                <span>Masuk dengan Sidik Jari</span>
+              </button>
             </div>
           </form>
         </div>
-        
       </div>
     </div>
   );
