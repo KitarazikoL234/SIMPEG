@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { 
   LayoutDashboard, 
   Users, 
@@ -22,6 +22,125 @@ import {
   Network
 } from 'lucide-react';
 import Chatbot from '@/components/Chatbot';
+
+// Extract the nav rendering into a separate component so it can be wrapped in Suspense
+function SidebarNav({ 
+  navItemsUtama, 
+  navItemsLainnya, 
+  expandedMenus, 
+  toggleSubMenu 
+}: any) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  return (
+    <>
+      <div>
+        <p className="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-3">
+          Menu Utama
+        </p>
+        <div className="space-y-1.5">
+          {navItemsUtama.map((item: any) => {
+            const hasSubItems = item.subItems && item.subItems.length > 0;
+            const isExpanded = expandedMenus[item.name];
+            
+            // Check if active (match exactly, or if sub-items, match starting path)
+            const isActive = hasSubItems 
+              ? pathname.startsWith(item.href)
+              : pathname === item.href;
+
+            const Icon = item.icon;
+
+            return (
+              <div key={item.name}>
+                <Link
+                  href={item.href}
+                  onClick={(e) => {
+                    if (hasSubItems) {
+                      e.preventDefault();
+                      toggleSubMenu(item.name);
+                    }
+                  }}
+                  className={`
+                    group flex items-center justify-between px-4 py-3 rounded-2xl text-sm transition-all
+                    ${isActive 
+                      ? 'bg-blue-50 text-blue-700 font-bold' 
+                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-semibold'}
+                  `}
+                >
+                  <div className="flex items-center gap-3.5">
+                    <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                    {item.name}
+                  </div>
+                  {hasSubItems && (
+                    <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  )}
+                </Link>
+                
+                {hasSubItems && isExpanded && (
+                  <div className="ml-5 mt-1 pl-4 border-l border-slate-200 space-y-1">
+                    {item.subItems.map((subItem: any) => {
+                      // Check if active (match pathname and any query params in href)
+                      const [basePath, queryStr] = subItem.href.split('?');
+                      const isSubActive = pathname === basePath && (!queryStr || queryStr === `tipe=${searchParams?.get('tipe')}`);
+                      
+                      return (
+                        <Link
+                          key={subItem.name}
+                          href={subItem.href}
+                          className={`
+                            relative block px-4 py-2 text-sm rounded-xl transition-all font-medium overflow-hidden
+                            ${isSubActive 
+                              ? 'text-blue-700 bg-blue-50/80 shadow-sm' 
+                              : 'text-slate-500 hover:text-blue-600 hover:bg-slate-50'}
+                          `}
+                        >
+                          {/* Animated dot indicator for active state */}
+                          {isSubActive && (
+                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-blue-600 rounded-full shadow-[0_0_8px_rgba(37,99,235,0.6)] animate-pulse"></span>
+                          )}
+                          <span className={isSubActive ? 'ml-1' : ''}>{subItem.name}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <p className="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-3">
+          Lainnya
+        </p>
+        <div className="space-y-1.5">
+          {navItemsLainnya.map((item: any) => {
+            const isActive = pathname === item.href && item.name !== 'BKD';
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                title={(item as any).tooltip}
+                className={`
+                  group flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm transition-all
+                  ${isActive 
+                    ? 'bg-blue-50 text-blue-700 font-bold' 
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-semibold'}
+                `}
+              >
+                <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                {item.name}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -180,92 +299,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-8">
-          <div>
-            <p className="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-3">
-              Menu Utama
-            </p>
-            <div className="space-y-1.5">
-              {navItemsUtama.map((item) => {
-                let isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                // Special case: don't highlight "Presensi" if we are in "Rekap Presensi"
-                if (item.href === '/presensi' && pathname.startsWith('/presensi/rekap')) {
-                  isActive = false;
-                }
-                const Icon = item.icon;
-                const hasSubItems = item.subItems && item.subItems.length > 0;
-                const isExpanded = expandedMenus[item.name] || false;
-
-                return (
-                  <div key={item.name} className="flex flex-col">
-                    <Link
-                      href={item.href}
-                      onClick={(e) => {
-                        if (hasSubItems) {
-                          setExpandedMenus(prev => ({ ...prev, [item.name]: !prev[item.name] }));
-                        }
-                      }}
-                      className={`
-                        group flex items-center justify-between px-4 py-3 rounded-2xl text-sm transition-all
-                        ${isActive 
-                          ? 'bg-blue-50 text-blue-700 font-bold' 
-                          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-semibold'}
-                      `}
-                    >
-                      <div className="flex items-center gap-3.5">
-                        <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                        {item.name}
-                      </div>
-                      {hasSubItems && (
-                        <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                      )}
-                    </Link>
-                    
-                    {hasSubItems && isExpanded && (
-                      <div className="ml-5 mt-1 pl-4 border-l border-slate-200 space-y-1">
-                        {item.subItems.map((subItem) => (
-                          <Link
-                            key={subItem.name}
-                            href={subItem.href}
-                            className="block px-4 py-2 text-sm text-slate-500 hover:text-blue-600 hover:bg-blue-50/50 rounded-xl transition-colors font-medium"
-                          >
-                            {subItem.name}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <p className="px-4 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-3">
-              Lainnya
-            </p>
-            <div className="space-y-1.5">
-              {navItemsLainnya.map((item) => {
-                const isActive = pathname === item.href && item.name !== 'BKD';
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    title={(item as any).tooltip}
-                    className={`
-                      group flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm transition-all
-                      ${isActive 
-                        ? 'bg-blue-50 text-blue-700 font-bold' 
-                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-semibold'}
-                    `}
-                  >
-                    <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+          <Suspense fallback={<div className="p-4 text-slate-400 text-sm">Memuat menu...</div>}>
+            <SidebarNav 
+              navItemsUtama={navItemsUtama} 
+              navItemsLainnya={navItemsLainnya} 
+              expandedMenus={expandedMenus} 
+              toggleSubMenu={(name: string) => setExpandedMenus(prev => ({ ...prev, [name]: !prev[name] }))} 
+            />
+          </Suspense>
         </nav>
 
         {/* Sidebar user profile (bottom) */}

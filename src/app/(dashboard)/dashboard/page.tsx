@@ -67,7 +67,7 @@ export default function DashboardPage() {
           font: {
             family: "'Inter', sans-serif",
             size: 13,
-            weight: '500'
+            weight: 500
           }
         }
       },
