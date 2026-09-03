@@ -252,6 +252,7 @@ export default function DashboardPage() {
               ))}
             </tbody>
           </table>
+        </div>
       </div>
 
       {/* Struktur Organisasi (Only for Pimpinan) */}
