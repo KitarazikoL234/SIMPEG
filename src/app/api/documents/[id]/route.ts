@@ -21,9 +21,43 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const body = await request.json();
+    
+    // Strip fields that are not in the Prisma schema
+    const { hasMasaBerlaku, ...rest } = body;
+    
+    // Build clean update data
+    const updateData: any = {};
+    const allowedFields = [
+      'employeeId', 'judul', 'nomorDokumen', 'kategoriUtama', 'subKategori',
+      'tipeFile', 'filePath', 'linkRepository', 'ukuranFile',
+      'semester', 'tahunAkademik', 'catatan', 'status'
+    ];
+    
+    for (const field of allowedFields) {
+      if (rest[field] !== undefined) {
+        updateData[field] = rest[field] || null;
+      }
+    }
+    
+    // Handle date fields
+    if (rest.tanggalTerbit) {
+      updateData.tanggalTerbit = new Date(rest.tanggalTerbit);
+    }
+    if (rest.masaBerlaku) {
+      updateData.masaBerlaku = new Date(rest.masaBerlaku);
+    } else {
+      updateData.masaBerlaku = null;
+    }
+    
+    // Don't overwrite filePath/ukuranFile with empty values if no new file uploaded
+    if (!updateData.filePath) {
+      delete updateData.filePath;
+      delete updateData.ukuranFile;
+    }
+
     const document = await prisma.document.update({
       where: { id },
-      data: body,
+      data: updateData,
     });
     return NextResponse.json({ success: true, data: document });
   } catch (error: any) {

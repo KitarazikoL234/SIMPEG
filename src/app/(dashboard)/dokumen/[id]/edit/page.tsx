@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UploadCloud, File, X, Link as LinkIcon, CheckCircle, ArrowLeft } from 'lucide-react';
+import { UploadCloud, File, X, Link as LinkIcon, CheckCircle, ArrowLeft, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { 
   KategoriUtama, 
@@ -22,8 +22,10 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
   
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
+  const [userData, setUserData] = useState<any>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [successModal, setSuccessModal] = useState(false);
   
   const [formData, setFormData] = useState({
     employeeId: '',
@@ -69,12 +71,33 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
       })
       .catch(console.error);
       
-    // Fetch employees for dropdown for dropdown
-    fetch('/api/employees?limit=100')
+    // Fetch current user info
+    fetch('/api/auth/me')
       .then(res => res.json())
       .then(json => {
-        if (json.success && json.data?.data) {
-          setEmployees(json.data.data);
+        if (json.success) {
+          setUserData(json.user);
+          const isAdminOrPimpinan = json.user.role === 'ADMIN' || json.user.role === 'PIMPINAN';
+          
+          if (isAdminOrPimpinan) {
+            fetch('/api/employees?limit=100')
+              .then(res => res.json())
+              .then(empJson => {
+                if (empJson.success && empJson.data?.data) {
+                  setEmployees(empJson.data.data);
+                }
+              })
+              .catch(console.error);
+          } else {
+            fetch(`/api/employees/${json.user.employeeId}`)
+              .then(res => res.json())
+              .then(empJson => {
+                if (empJson.success && empJson.data) {
+                  setEmployees([empJson.data]);
+                }
+              })
+              .catch(console.error);
+          }
         }
       })
       .catch(console.error);
@@ -170,8 +193,7 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
       const json = await res.json();
       
       if (json.success) {
-        alert('Dokumen berhasil disimpan');
-        router.push('/dokumen');
+        setSuccessModal(true);
       } else {
         throw new Error(json.error || 'Failed to save document');
       }
@@ -209,7 +231,8 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
                 required
                 value={formData.employeeId}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+                disabled={userData && userData.role !== 'ADMIN' && userData.role !== 'PIMPINAN'}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-slate-100 disabled:cursor-not-allowed"
               >
                 <option value="">-- Pilih Pegawai --</option>
                 {employees.map(emp => (
@@ -455,6 +478,29 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
           </button>
         </div>
       </form>
+
+      {/* Success Modal */}
+      {successModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-popup">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-5">
+                <CheckCircle className="w-10 h-10" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Berhasil!</h3>
+              <p className="text-slate-500 mb-8 leading-relaxed">
+                Dokumen berhasil diperbarui.
+              </p>
+              <button 
+                onClick={() => router.push('/dokumen')}
+                className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold transition-all shadow-sm active:scale-95"
+              >
+                Kembali ke Arsip Dokumen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
