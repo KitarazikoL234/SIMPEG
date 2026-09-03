@@ -4,24 +4,31 @@ import { useEffect, useState } from "react";
 import Link from 'next/link';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
+import { Network, Shield, Briefcase, Users, GraduationCap, User, FileText as FileIcon, AlertTriangle as FileWarningIcon } from "lucide-react";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string>('');
 
   useEffect(() => {
-    fetch('/api/stats')
-      .then(res => res.json())
-      .then(data => {
-        setStats(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+    Promise.all([
+      fetch('/api/stats').then(res => res.json()),
+      fetch('/api/auth/me').then(res => res.json())
+    ])
+    .then(([statsData, authData]) => {
+      setStats(statsData);
+      if (authData.success && authData.user) {
+        setUserRole(authData.user.role);
+      }
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error(err);
+      setLoading(false);
+    });
   }, []);
 
   const doughnutData = {
@@ -245,8 +252,81 @@ export default function DashboardPage() {
               ))}
             </tbody>
           </table>
-        </div>
       </div>
+
+      {/* Struktur Organisasi (Only for Pimpinan) */}
+      {userRole === 'PIMPINAN' && (
+        <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-sm overflow-hidden mt-6">
+          <div className="p-6 border-b border-[#E2E8F0]">
+            <h2 className="text-lg font-semibold text-[#0F172A] flex items-center gap-2">
+              <Network className="w-5 h-5 text-blue-600" />
+              Struktur Organisasi STIKES Baktara
+            </h2>
+            <p className="text-sm text-[#64748B] mt-1">Ringkasan bagan struktur organisasi</p>
+          </div>
+          <div className="p-8 overflow-x-auto">
+            <div className="min-w-[700px] flex flex-col items-center py-4">
+              {/* Level 1: Pimpinan */}
+              <div className="flex flex-col items-center">
+                <div className="bg-blue-600 text-white p-3 rounded-xl shadow-sm w-56 text-center relative z-10">
+                  <Shield className="w-6 h-6 mx-auto mb-1 text-blue-200" />
+                  <h3 className="font-bold text-sm">Pimpinan / Ketua</h3>
+                </div>
+                <div className="w-px h-8 bg-slate-300"></div>
+              </div>
+
+              {/* Level 2 Container */}
+              <div className="relative flex justify-center w-full">
+                <div className="absolute top-0 w-2/3 h-px bg-slate-300"></div>
+                
+                <div className="flex justify-between w-full max-w-3xl px-8">
+                  {/* Branch 1: Administrasi */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-px h-8 bg-slate-300"></div>
+                    <div className="bg-amber-500 text-white p-3 rounded-xl shadow-sm w-48 text-center relative z-10">
+                      <Briefcase className="w-6 h-6 mx-auto mb-1 text-amber-200" />
+                      <h3 className="font-bold text-sm">Administrasi</h3>
+                    </div>
+                    <div className="w-px h-8 bg-slate-300"></div>
+                    <div className="bg-slate-50 border border-slate-200 p-2 rounded-lg shadow-sm w-40 text-center">
+                      <Users className="w-4 h-4 mx-auto mb-1 text-slate-400" />
+                      <p className="font-semibold text-slate-700 text-xs">Staff Administrasi</p>
+                    </div>
+                  </div>
+
+                  {/* Branch 2: Dosen / Tendik */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-px h-8 bg-slate-300"></div>
+                    <div className="bg-emerald-500 text-white p-3 rounded-xl shadow-sm w-48 text-center relative z-10">
+                      <GraduationCap className="w-6 h-6 mx-auto mb-1 text-emerald-200" />
+                      <h3 className="font-bold text-sm">Akademik</h3>
+                    </div>
+                    <div className="flex gap-4 mt-6 relative">
+                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-32 h-px bg-slate-300"></div>
+                      
+                      <div className="flex flex-col items-center">
+                        <div className="absolute -top-6 w-px h-6 bg-slate-300"></div>
+                        <div className="bg-slate-50 border border-slate-200 p-2 rounded-lg shadow-sm w-32 text-center">
+                          <User className="w-4 h-4 mx-auto mb-1 text-blue-500" />
+                          <p className="font-semibold text-slate-700 text-xs">Dosen</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col items-center relative">
+                        <div className="absolute -top-6 w-px h-6 bg-slate-300"></div>
+                        <div className="bg-slate-50 border border-slate-200 p-2 rounded-lg shadow-sm w-32 text-center">
+                          <User className="w-4 h-4 mx-auto mb-1 text-amber-500" />
+                          <p className="font-semibold text-slate-700 text-xs">Tendik</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -119,10 +119,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   const navItemsLainnya = [
-    ...(isPimpinan ? [
-      { name: 'Struktur Organisasi', href: '/struktur-organisasi', icon: Network },
-      { name: 'Laporan', href: '/laporan', icon: PieChart }
-    ] : []),
+    ...(isPimpinan ? [{ name: 'Laporan', href: '/laporan', icon: PieChart }] : []),
     { name: 'Rekap Presensi', href: '/presensi/rekap', icon: BarChart3 },
     { name: 'Bantuan', href: '/bantuan', icon: LifeBuoy },
     { name: 'Pengaturan', href: '/pengaturan', icon: Settings },
