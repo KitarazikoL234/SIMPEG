@@ -12,7 +12,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   
   // Captcha State
-  const [captchaData, setCaptchaData] = useState({ num1: 0, num2: 0 });
+  const [captchaText, setCaptchaText] = useState("");
+  const [captchaLines, setCaptchaLines] = useState<{x1:number, y1:number, x2:number, y2:number}[]>([]);
   const [captchaAnswer, setCaptchaAnswer] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -33,10 +34,22 @@ export default function LoginPage() {
   }, []);
 
   const generateCaptcha = () => {
-    setCaptchaData({
-      num1: Math.floor(Math.random() * 10) + 1,
-      num2: Math.floor(Math.random() * 10) + 1
-    });
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let text = '';
+    for (let i = 0; i < 5; i++) {
+      text += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setCaptchaText(text);
+    
+    // Generate noise lines
+    const lines = Array.from({length: 4}).map(() => ({
+      x1: Math.random() * 120,
+      y1: Math.random() * 40,
+      x2: Math.random() * 120,
+      y2: Math.random() * 40
+    }));
+    setCaptchaLines(lines);
+    
     setCaptchaAnswer("");
   };
 
@@ -45,8 +58,8 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    if (parseInt(captchaAnswer) !== (captchaData.num1 + captchaData.num2)) {
-      setError("Jawaban Captcha salah. Silakan coba lagi.");
+    if (captchaAnswer.toLowerCase() !== captchaText.toLowerCase()) {
+      setError("Kode Captcha salah. Silakan coba lagi.");
       generateCaptcha();
       setLoading(false);
       return;
@@ -219,19 +232,45 @@ export default function LoginPage() {
             <div className="space-y-2 pt-2">
               <label className="text-sm font-bold text-slate-700 ml-1">Keamanan (Captcha)</label>
               <div className="flex items-center gap-3">
-                <div className="bg-slate-100 border-2 border-slate-200 rounded-2xl px-4 py-3 flex items-center justify-center gap-2 shrink-0 font-mono font-bold text-slate-800">
-                  <span>{captchaData.num1}</span>
-                  <span>+</span>
-                  <span>{captchaData.num2}</span>
-                  <span>=</span>
+                <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl overflow-hidden shrink-0 w-[120px] h-[52px] relative flex justify-center items-center">
+                  <svg width="120" height="52" viewBox="0 0 120 52" className="absolute inset-0 pointer-events-none">
+                    {/* Noise Lines */}
+                    {captchaLines.map((line, i) => (
+                      <line key={i} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke={i % 2 === 0 ? "#cbd5e1" : "#94a3b8"} strokeWidth="1.5" />
+                    ))}
+                    {/* Characters */}
+                    {captchaText.split('').map((char, i) => {
+                      const x = 15 + (i * 20);
+                      const y = 35 + (Math.random() * 8 - 4);
+                      const rotate = Math.random() * 40 - 20;
+                      // Generate a dark, legible color for text
+                      const colors = ["#1e293b", "#334155", "#0f172a", "#1d4ed8", "#b91c1c", "#047857"];
+                      const color = colors[Math.floor(Math.random() * colors.length)];
+                      return (
+                        <text 
+                          key={i} 
+                          x={x} 
+                          y={y} 
+                          transform={`rotate(${rotate} ${x} ${y})`}
+                          fontSize="24" 
+                          fontFamily="monospace"
+                          fontWeight="bold"
+                          fill={color}
+                        >
+                          {char}
+                        </text>
+                      );
+                    })}
+                  </svg>
                 </div>
                 <input
-                  type="number"
+                  type="text"
                   required
                   value={captchaAnswer}
                   onChange={(e) => setCaptchaAnswer(e.target.value)}
                   className="w-full px-5 py-3.5 bg-slate-50/50 border-2 border-slate-200 rounded-2xl focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400 hover:border-slate-300"
-                  placeholder="Hasil"
+                  placeholder="Ketik kode di kiri"
+                  maxLength={5}
                 />
                 <button 
                   type="button"
