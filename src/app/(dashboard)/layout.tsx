@@ -32,6 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [hasUnreadNotifs, setHasUnreadNotifs] = useState(true);
   const [user, setUser] = useState<{ id?: string; nama: string; role: string; email?: string; employeeId?: string } | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
   
   const profileRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -98,10 +99,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isManagement = user?.role === 'ADMIN' || user?.role === 'OPERATOR' || user?.role === 'PIMPINAN';
   const isPimpinan = user?.role === 'PIMPINAN';
 
-  const navItemsUtama = [
+  type NavItem = { name: string; href: string; icon: any; subItems?: { name: string; href: string }[] };
+
+  const navItemsUtama: NavItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     // Show Pegawai only for management roles
-    ...(isManagement ? [{ name: 'Pegawai', href: '/pegawai', icon: Users }] : []),
+    ...(isManagement ? [{ 
+      name: 'Pegawai', 
+      href: '/pegawai', 
+      icon: Users,
+      subItems: [
+        { name: 'Dosen', href: '/pegawai?tipe=DOSEN' },
+        { name: 'Tendik', href: '/pegawai?tipe=TENDIK' }
+      ]
+    }] : []),
     { name: 'Dokumen', href: '/dokumen', icon: FolderOpen },
     { name: 'Presensi', href: '/presensi', icon: Clock },
   ];
@@ -179,20 +190,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   isActive = false;
                 }
                 const Icon = item.icon;
+                const hasSubItems = item.subItems && item.subItems.length > 0;
+                const isExpanded = expandedMenus[item.name] || false;
+
                 return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`
-                      group flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm transition-all
-                      ${isActive 
-                        ? 'bg-blue-50 text-blue-700 font-bold' 
-                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-semibold'}
-                    `}
-                  >
-                    <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                    {item.name}
-                  </Link>
+                  <div key={item.name} className="flex flex-col">
+                    <Link
+                      href={item.href}
+                      onClick={(e) => {
+                        if (hasSubItems) {
+                          setExpandedMenus(prev => ({ ...prev, [item.name]: !prev[item.name] }));
+                        }
+                      }}
+                      className={`
+                        group flex items-center justify-between px-4 py-3 rounded-2xl text-sm transition-all
+                        ${isActive 
+                          ? 'bg-blue-50 text-blue-700 font-bold' 
+                          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-semibold'}
+                      `}
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                        {item.name}
+                      </div>
+                      {hasSubItems && (
+                        <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                      )}
+                    </Link>
+                    
+                    {hasSubItems && isExpanded && (
+                      <div className="ml-5 mt-1 pl-4 border-l border-slate-200 space-y-1">
+                        {item.subItems.map((subItem) => (
+                          <Link
+                            key={subItem.name}
+                            href={subItem.href}
+                            className="block px-4 py-2 text-sm text-slate-500 hover:text-blue-600 hover:bg-blue-50/50 rounded-xl transition-colors font-medium"
+                          >
+                            {subItem.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>

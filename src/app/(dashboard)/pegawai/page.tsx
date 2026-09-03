@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, Suspense } from 'next/navigation';
 import { getInitials } from '@/lib/utils';
 import { KategoriUtama, StatusKepegawaian, TipeKepegawaian } from '@/types';
 
@@ -21,18 +21,27 @@ interface Employee {
   foto: string | null;
 }
 
-export default function EmployeeListPage() {
+function EmployeeListContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tipeParam = searchParams.get('tipe');
+
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [tipe, setTipe] = useState('');
+  const [tipe, setTipe] = useState(tipeParam || '');
   const [status, setStatus] = useState('');
   const [unitKerja, setUnitKerja] = useState('');
   
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [userRole, setUserRole] = useState<string>('');
+
+  useEffect(() => {
+    if (tipeParam !== null) {
+      setTipe(tipeParam);
+    }
+  }, [tipeParam]);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -282,5 +291,13 @@ export default function EmployeeListPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function EmployeeListPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Memuat halaman...</div>}>
+      <EmployeeListContent />
+    </Suspense>
   );
 }
