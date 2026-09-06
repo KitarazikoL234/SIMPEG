@@ -26,9 +26,11 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
+  const [employees, setEmployees] = useState<any[]>([]); // NEW: for tagging
   
   const [formData, setFormData] = useState({
     employeeId: '',
+    taggedEmployees: [] as string[], // NEW: for tagging
     judul: '',
     nomorDokumen: '',
     kategoriUtama: '' as KategoriUtama | '',
@@ -41,6 +43,7 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
     catatan: '',
     tipeFile: 'UPLOAD',
     linkRepository: '',
+    applyToAll: true, // NEW: Apply changes to existing copies by default
   });
 
   const tahunOptions = generateTahunAkademikOptions();
@@ -70,7 +73,17 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
         }
       })
       .catch(console.error);
-      
+
+    // Fetch employees for tagging
+    fetch('/api/employees?limit=200')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data?.data) {
+          setEmployees(data.data.data);
+        }
+      })
+      .catch(console.error);
+
     // Fetch current user info
     fetch('/api/auth/me')
       .then(res => res.json())
@@ -239,6 +252,51 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
                   <option key={emp.id} value={emp.id}>{emp.nama} ({emp.nip || emp.nidn})</option>
                 ))}
               </select>
+            </div>
+
+            {formData.employeeId && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Bagikan ke Pegawai Lain (Tag Baru)</label>
+                <p className="text-xs text-slate-500 mb-2">Pilih pegawai tambahan untuk membuat salinan dokumen ini di arsip mereka.</p>
+                <div className="max-h-40 overflow-y-auto border border-slate-300 rounded-lg p-2 bg-slate-50 space-y-1">
+                  {employees.filter(emp => emp.id !== formData.employeeId).map(emp => (
+                    <label key={emp.id} className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded cursor-pointer transition-colors">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.taggedEmployees.includes(emp.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData(prev => ({ ...prev, taggedEmployees: [...prev.taggedEmployees, emp.id] }));
+                          } else {
+                            setFormData(prev => ({ ...prev, taggedEmployees: prev.taggedEmployees.filter(id => id !== emp.id) }));
+                          }
+                        }}
+                        className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 border-slate-300"
+                      />
+                      <span className="text-sm text-slate-700 font-medium">{emp.nama} <span className="text-slate-400 font-normal">({emp.nip || emp.nidn || '-'})</span></span>
+                    </label>
+                  ))}
+                  {employees.length <= 1 && (
+                    <p className="text-sm text-slate-400 p-2 italic">Tidak ada pegawai lain untuk ditag.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-4 mb-2">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  name="applyToAll"
+                  checked={formData.applyToAll}
+                  onChange={handleChange}
+                  className="mt-1 rounded text-blue-600 focus:ring-blue-500 w-4 h-4 border-slate-300"
+                />
+                <div>
+                  <span className="text-sm font-bold text-blue-900 block">Terapkan perubahan ke semua salinan yang ada</span>
+                  <span className="text-xs text-blue-700 mt-1 block">Jika dokumen ini sebelumnya di-tag ke pegawai lain (memiliki file yang sama), centang opsi ini agar perubahan judul, kategori, dll juga ikut diperbarui di arsip mereka.</span>
+                </div>
+              </label>
             </div>
 
             <div className="md:col-span-2">

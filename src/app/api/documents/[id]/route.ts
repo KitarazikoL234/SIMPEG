@@ -55,11 +55,67 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       delete updateData.ukuranFile;
     }
 
-    const document = await prisma.document.update({
-      where: { id },
+    // Determine the target documents to update
+    const targetIds = [id];
+    
+    // First, fetch the original document to check for copies
+    const originalDoc = await prisma.document.findUnique({ where: { id } });
+    if (!originalDoc) return NextResponse.json({ success: false, error: 'Document not found' }, { status: 404 });
+
+    if (body.applyToAll) {
+      const copiesWhere: any = {};
+      if (originalDoc.tipeFile === 'UPLOAD' && originalDoc.filePath) {
+        copiesWhere.filePath = originalDoc.filePath;
+      } else if (originalDoc.tipeFile === 'LINK' && originalDoc.linkRepository) {
+        copiesWhere.linkRepository = originalDoc.linkRepository;
+        copiesWhere.judul = originalDoc.judul;
+        copiesWhere.tanggalTerbit = originalDoc.tanggalTerbit;
+      }
+      
+      if (Object.keys(copiesWhere).length > 0) {
+        const copies = await prisma.document.findMany({ where: copiesWhere, select: { id: true } });
+        copies.forEach(copy => {
+          if (!targetIds.includes(copy.id)) targetIds.push(copy.id);
+        });
+      }
+    }
+
+    // Update all targeted documents
+    await prisma.document.updateMany({
+      where: { id: { in: targetIds } },
       data: updateData,
     });
-    return NextResponse.json({ success: true, data: document });
+
+    // Create NEW copies for newly tagged employees
+    if (Array.isArray(body.taggedEmployees) && body.taggedEmployees.length > 0) {
+      // Find which tagged employees ALREADY have a copy (so we don't duplicate again)
+      const existingCopies = await prisma.document.findMany({
+        where: { id: { in: targetIds } },
+        select: { employeeId: true }
+      });
+      const existingEmployeeIds = existingCopies.map(c => c.employeeId);
+      
+      const newTags = body.taggedEmployees.filter((empId: string) => !existingEmployeeIds.includes(empId));
+      
+      if (newTags.length > 0) {
+        // Base document for new copies is the updated data merged with original data
+        const finalDocData = { ...originalDoc, ...updateData };
+        delete finalDocData.id;
+        delete finalDocData.createdAt;
+        delete finalDocData.updatedAt;
+        
+        const newCopies = newTags.map((empId: string) => ({
+          ...finalDocData,
+          employeeId: empId,
+        }));
+        
+        await prisma.document.createMany({ data: newCopies });
+      }
+    }
+
+    // Fetch the updated main document to return
+    const updatedDocument = await prisma.document.findUnique({ where: { id } });
+    return NextResponse.json({ success: true, data: updatedDocument });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
