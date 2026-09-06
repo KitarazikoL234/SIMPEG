@@ -26,7 +26,6 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
-  const [employees, setEmployees] = useState<any[]>([]); // NEW: for tagging
   
   const [formData, setFormData] = useState({
     employeeId: '',
@@ -74,43 +73,21 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
       })
       .catch(console.error);
 
-    // Fetch employees for tagging
-    fetch('/api/employees?limit=200')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.data?.data) {
-          setEmployees(data.data.data);
-        }
-      })
-      .catch(console.error);
-
     // Fetch current user info
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(json => {
         if (json.success) {
           setUserData(json.user);
-          const isAdminOrPimpinan = json.user.role === 'ADMIN' || json.user.role === 'PIMPINAN';
           
-          if (isAdminOrPimpinan) {
-            fetch('/api/employees?limit=100')
-              .then(res => res.json())
-              .then(empJson => {
-                if (empJson.success && empJson.data?.data) {
-                  setEmployees(empJson.data.data);
-                }
-              })
-              .catch(console.error);
-          } else {
-            fetch(`/api/employees/${json.user.employeeId}`)
-              .then(res => res.json())
-              .then(empJson => {
-                if (empJson.success && empJson.data) {
-                  setEmployees([empJson.data]);
-                }
-              })
-              .catch(console.error);
-          }
+          fetch('/api/employees?limit=200')
+            .then(res => res.json())
+            .then(empJson => {
+              if (empJson.success && empJson.data?.data) {
+                setEmployees(empJson.data.data);
+              }
+            })
+            .catch(console.error);
         }
       })
       .catch(console.error);
