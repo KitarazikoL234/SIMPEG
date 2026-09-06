@@ -256,61 +256,63 @@ export default function LoginPage() {
             {/* Captcha Field */}
             <div className="space-y-2 pt-2">
               <label className="text-sm font-bold text-slate-700 ml-1">Keamanan (Captcha)</label>
-              <div className="flex items-center gap-3">
-                <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl overflow-hidden shrink-0 w-[140px] h-[52px] relative flex justify-center items-center">
-                  <svg width="140" height="52" viewBox="0 0 140 52" className="absolute inset-0 pointer-events-none">
-                    <defs>
-                      <filter id="distort">
-                        <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" result="noise" />
-                        <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" />
-                      </filter>
-                    </defs>
-                    <g filter="url(#distort)">
-                      {/* Background Noise Dots */}
-                      {captchaDots.map((dot, i) => (
-                        <circle key={`dot-${i}`} cx={dot.cx} cy={dot.cy} r={dot.r} fill="#94a3b8" opacity="0.6" />
-                      ))}
-                      
-                      {/* Noise Lines */}
-                      {captchaLines.map((line, i) => (
-                        <line key={`line-${i}`} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke={i % 2 === 0 ? "#cbd5e1" : "#94a3b8"} strokeWidth={Math.random() * 1.5 + 0.5} />
-                      ))}
-                      
-                      {/* Characters */}
-                      {captchaChars.map((item, i) => (
-                        <text 
-                          key={`char-${i}`} 
-                          x={item.x} 
-                          y={item.y} 
-                          transform={`rotate(${item.rotate} ${item.x} ${item.y})`}
-                          fontSize={`${item.fontSize}px`}
-                          fontFamily="monospace"
-                          fontWeight="900"
-                          fill={item.color}
-                        >
-                          {item.char}
-                        </text>
-                      ))}
-                    </g>
-                  </svg>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="flex items-center gap-3 justify-center sm:justify-start">
+                  <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl overflow-hidden shrink-0 w-[140px] h-[52px] relative flex justify-center items-center">
+                    <svg width="140" height="52" viewBox="0 0 140 52" className="absolute inset-0 pointer-events-none">
+                      <defs>
+                        <filter id="distort">
+                          <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" result="noise" />
+                          <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" />
+                        </filter>
+                      </defs>
+                      <g filter="url(#distort)">
+                        {/* Background Noise Dots */}
+                        {captchaDots.map((dot, i) => (
+                          <circle key={`dot-${i}`} cx={dot.cx} cy={dot.cy} r={dot.r} fill="#94a3b8" opacity="0.6" />
+                        ))}
+                        
+                        {/* Noise Lines */}
+                        {captchaLines.map((line, i) => (
+                          <line key={`line-${i}`} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke={i % 2 === 0 ? "#cbd5e1" : "#94a3b8"} strokeWidth={Math.random() * 1.5 + 0.5} />
+                        ))}
+                        
+                        {/* Characters */}
+                        {captchaChars.map((item, i) => (
+                          <text 
+                            key={`char-${i}`} 
+                            x={item.x} 
+                            y={item.y} 
+                            transform={`rotate(${item.rotate} ${item.x} ${item.y})`}
+                            fontSize={`${item.fontSize}px`}
+                            fontFamily="monospace"
+                            fontWeight="900"
+                            fill={item.color}
+                          >
+                            {item.char}
+                          </text>
+                        ))}
+                      </g>
+                    </svg>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={generateCaptcha}
+                    className="p-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl transition-colors border-2 border-slate-200 flex-shrink-0"
+                    title="Ganti Captcha"
+                  >
+                    <RefreshCcw className="w-5 h-5" />
+                  </button>
                 </div>
                 <input
                   type="text"
                   required
                   value={captchaAnswer}
                   onChange={(e) => setCaptchaAnswer(e.target.value)}
-                  className="w-full px-5 py-3.5 bg-slate-50/50 border-2 border-slate-200 rounded-2xl focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400 hover:border-slate-300"
-                  placeholder="Ketik kode di kiri"
+                  className="w-full flex-1 px-5 py-3.5 bg-slate-50/50 border-2 border-slate-200 rounded-2xl focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400 hover:border-slate-300 text-center sm:text-left"
+                  placeholder="Ketik kode captcha"
                   maxLength={5}
                 />
-                <button 
-                  type="button"
-                  onClick={generateCaptcha}
-                  className="p-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl transition-colors border-2 border-slate-200"
-                  title="Ganti Captcha"
-                >
-                  <RefreshCcw className="w-5 h-5" />
-                </button>
               </div>
             </div>
 
