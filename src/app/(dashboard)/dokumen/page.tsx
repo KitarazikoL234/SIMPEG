@@ -183,6 +183,13 @@ export default function DokumenPage() {
           <p className="text-lg text-slate-500 mt-1">Kelola arsip dokumen kepegawaian</p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
+          <button 
+            onClick={() => setActiveStatus(activeStatus === 'ARSIP' ? 'AKTIF' : 'ARSIP')}
+            className={`inline-flex flex-1 sm:flex-none justify-center items-center gap-2 px-5 py-3 rounded-xl text-base font-medium transition-colors border ${activeStatus === 'ARSIP' ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'}`}
+          >
+            <Archive className="w-5 h-5" />
+            <span>{activeStatus === 'ARSIP' ? 'Lihat Dokumen Aktif' : 'Lihat Arsip'}</span>
+          </button>
           <Link 
             href="/dokumen/sampah" 
             className="inline-flex flex-1 sm:flex-none justify-center items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-3 rounded-xl text-base font-medium transition-colors border border-slate-200"
@@ -242,19 +249,6 @@ export default function DokumenPage() {
                   </div>
                 </div>
 
-                <div className="relative shrink-0">
-                  <select
-                    value={activeStatus}
-                    onChange={(e) => setActiveStatus(e.target.value)}
-                    className="pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:border-blue-500 focus:outline-none transition-colors appearance-none cursor-pointer"
-                  >
-                    <option value="AKTIF">Dokumen Aktif</option>
-                    <option value="ARSIP">Diarsipkan</option>
-                    <option value="SEMUA">Semua Status</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                  </div>
                 </div>
                 
                 {(userRole === 'ADMIN' || userRole === 'PIMPINAN') && (
