@@ -54,7 +54,8 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
       .then(json => {
         if (json.success && json.data) {
           const doc = json.data;
-          setFormData({
+          setFormData(prev => ({
+            ...prev,
             employeeId: doc.employeeId || '',
             judul: doc.judul || '',
             nomorDokumen: doc.nomorDokumen || '',
@@ -68,7 +69,7 @@ export default function EditDokumenPage({ params }: { params: Promise<{ id: stri
             catatan: doc.catatan || '',
             tipeFile: doc.tipeFile || 'UPLOAD',
             linkRepository: doc.linkRepository || '',
-          });
+          }));
         }
       })
       .catch(console.error);
