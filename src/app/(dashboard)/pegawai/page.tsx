@@ -19,6 +19,7 @@ interface Employee {
   gelarDepan: string | null;
   gelarBelakang: string | null;
   foto: string | null;
+  tmtPertama: string | null;
 }
 
 function EmployeeListContent() {
@@ -164,8 +165,8 @@ function EmployeeListContent() {
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Pegawai</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit / Jabatan</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">ID & Masuk</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit/Prodi & Jabatan</th>
                 <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Aksi</th>
               </tr>
@@ -220,9 +221,14 @@ function EmployeeListContent() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-slate-900">NIP: {emp.nip || '-'}</div>
                       <div className="text-sm text-slate-500">NIDN: {emp.nidn || '-'}</div>
+                      {emp.tmtPertama && (
+                        <div className="text-[11px] font-semibold text-blue-600 mt-1">
+                          Masuk: {new Date(emp.tmtPertama).getFullYear()}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-slate-900">{emp.unitKerja || '-'}</div>
+                      <div className="text-sm font-semibold text-slate-900">{emp.unitKerja || '-'}</div>
                       <div className="text-sm text-slate-500">{emp.jabatanStruktural || emp.jabatanAkademik || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
