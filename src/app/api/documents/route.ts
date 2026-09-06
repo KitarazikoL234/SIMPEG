@@ -56,7 +56,10 @@ export async function GET(request: Request) {
       prisma.document.findMany({
         where,
         include: { employee: { select: { nama: true, id: true } } },
-        orderBy: { createdAt: 'desc' },
+        orderBy: [
+          { isPinned: 'desc' },
+          { createdAt: 'desc' }
+        ],
         skip,
         take: limit,
       }),

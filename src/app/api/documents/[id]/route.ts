@@ -65,6 +65,26 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    
+    // Allow partial updates for specific toggles
+    const updateData: any = {};
+    if (body.isPinned !== undefined) updateData.isPinned = body.isPinned;
+    if (body.status !== undefined) updateData.status = body.status;
+
+    const document = await prisma.document.update({
+      where: { id },
+      data: updateData,
+    });
+    return NextResponse.json({ success: true, data: document });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;

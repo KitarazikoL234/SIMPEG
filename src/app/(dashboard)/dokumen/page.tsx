@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Search, Plus, FileText, Grid as GridIcon, List as ListIcon,
-  Filter, Download, Eye, MoreVertical, Link as LinkIcon, Trash2, Pencil, AlertTriangle
+  Filter, Download, Eye, MoreVertical, Link as LinkIcon, Trash2, Pencil, AlertTriangle, Pin, Archive, ArchiveRestore
 } from 'lucide-react';
 import { KategoriUtama, KATEGORI_COLORS, KATEGORI_BG_COLORS, KATEGORI_UTAMA_LABELS, SUB_KATEGORI_LABELS, SubKategori } from '@/types';
 import { formatDate } from '@/lib/utils';
@@ -16,6 +16,7 @@ export default function DokumenPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('SEMUA');
+  const [activeStatus, setActiveStatus] = useState<string>('AKTIF');
   const [toastMessage, setToastMessage] = useState<{show: boolean, docId: string, prevStatus: string}>({show: false, docId: '', prevStatus: ''});
 
   const [customCategories, setCustomCategories] = useState<any[]>([]);
@@ -27,7 +28,8 @@ export default function DokumenPage() {
     setLoading(true);
     try {
       const catQuery = activeCategory !== 'SEMUA' ? `&kategoriUtama=${activeCategory}` : '';
-      const res = await fetch(`/api/documents?q=${search}&limit=50${catQuery}`);
+      const statQuery = activeStatus !== 'SEMUA' ? `&status=${activeStatus}` : '';
+      const res = await fetch(`/api/documents?q=${search}&limit=50${catQuery}${statQuery}`);
       const json = await res.json();
       if (json.success) {
         setDocuments(json.data.data);
@@ -41,7 +43,7 @@ export default function DokumenPage() {
 
   useEffect(() => {
     fetchDocuments();
-  }, [search, activeCategory]);
+  }, [search, activeCategory, activeStatus]);
 
   useEffect(() => {
     // Fetch custom categories
@@ -108,7 +110,34 @@ export default function DokumenPage() {
         alert(data.error || 'Gagal menghapus dokumen');
       }
     } catch (e) {
-      alert('Terjadi kesalahan saat menghapus dokumen');
+      console.error(e);
+    }
+  };
+
+  const handleTogglePin = async (id: string, currentPin: boolean) => {
+    try {
+      const res = await fetch(`/api/documents/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPinned: !currentPin })
+      });
+      if (res.ok) fetchDocuments();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleToggleArchive = async (id: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'ARSIP' ? 'AKTIF' : 'ARSIP';
+      const res = await fetch(`/api/documents/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) fetchDocuments();
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -207,6 +236,21 @@ export default function DokumenPage() {
                         {kat.name.replace(/_/g, ' ')}
                       </option>
                     ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
+                </div>
+
+                <div className="relative shrink-0">
+                  <select
+                    value={activeStatus}
+                    onChange={(e) => setActiveStatus(e.target.value)}
+                    className="pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:border-blue-500 focus:outline-none transition-colors appearance-none cursor-pointer"
+                  >
+                    <option value="AKTIF">Dokumen Aktif</option>
+                    <option value="ARSIP">Diarsipkan</option>
+                    <option value="SEMUA">Semua Status</option>
                   </select>
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                     <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -390,6 +434,24 @@ export default function DokumenPage() {
                             </span>
                           )}
 
+                          {/* Pin Button */}
+                          <button 
+                            onClick={() => handleTogglePin(doc.id, doc.isPinned)}
+                            className={`inline-flex items-center justify-center p-2 rounded-lg transition-colors border ${doc.isPinned ? 'text-amber-500 bg-amber-50 border-amber-200 hover:bg-amber-100' : 'text-slate-500 hover:bg-slate-100 hover:text-amber-500 border-transparent hover:border-slate-200'}`}
+                            title={doc.isPinned ? "Lepas Sematan" : "Sematkan Dokumen"}
+                          >
+                            <Pin className={`w-5 h-5 ${doc.isPinned ? 'fill-amber-500' : ''}`} />
+                          </button>
+
+                          {/* Archive Button */}
+                          <button 
+                            onClick={() => handleToggleArchive(doc.id, doc.status)}
+                            className={`inline-flex items-center justify-center p-2 rounded-lg transition-colors border ${doc.status === 'ARSIP' ? 'text-indigo-600 bg-indigo-50 border-indigo-200 hover:bg-indigo-100' : 'text-slate-500 hover:bg-slate-100 hover:text-indigo-600 border-transparent hover:border-slate-200'}`}
+                            title={doc.status === 'ARSIP' ? "Kembalikan dari Arsip" : "Arsipkan Dokumen"}
+                          >
+                            {doc.status === 'ARSIP' ? <ArchiveRestore className="w-5 h-5" /> : <Archive className="w-5 h-5" />}
+                          </button>
+
                           {/* Edit Button */}
                           <Link 
                             href={`/dokumen/${doc.id}/edit`}
@@ -432,8 +494,20 @@ export default function DokumenPage() {
                         {doc.status}
                       </span>
                       <div className="flex gap-1">
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded">Public</span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded">Tag: V1</span>
+                        <button 
+                          onClick={() => handleToggleArchive(doc.id, doc.status)}
+                          className={`p-1.5 rounded-md transition-colors ${doc.status === 'ARSIP' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-indigo-600'}`}
+                          title={doc.status === 'ARSIP' ? "Kembalikan" : "Arsipkan"}
+                        >
+                          {doc.status === 'ARSIP' ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+                        </button>
+                        <button 
+                          onClick={() => handleTogglePin(doc.id, doc.isPinned)}
+                          className={`p-1.5 rounded-md transition-colors ${doc.isPinned ? 'bg-amber-100 text-amber-500' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-amber-500'}`}
+                          title={doc.isPinned ? "Lepas Sematan" : "Sematkan"}
+                        >
+                          <Pin className={`w-3.5 h-3.5 ${doc.isPinned ? 'fill-amber-500' : ''}`} />
+                        </button>
                       </div>
                     </div>
                   </div>
