@@ -165,8 +165,10 @@ function EmployeeListContent() {
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Pegawai</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">ID & Masuk</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit/Prodi & Jabatan</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">ID (NIP/NIDN)</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Prodi / Unit</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Jabatan</th>
+                <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Tahun Masuk</th>
                 <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Aksi</th>
               </tr>
@@ -178,13 +180,15 @@ function EmployeeListContent() {
                     <td className="px-6 py-4"><div className="h-10 w-48 bg-slate-200 rounded"></div></td>
                     <td className="px-6 py-4"><div className="h-4 w-24 bg-slate-200 rounded"></div></td>
                     <td className="px-6 py-4"><div className="h-4 w-32 bg-slate-200 rounded"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 w-24 bg-slate-200 rounded"></div></td>
+                    <td className="px-6 py-4"><div className="h-6 w-16 bg-slate-200 rounded mx-auto"></div></td>
                     <td className="px-6 py-4"><div className="h-6 w-16 bg-slate-200 rounded mx-auto"></div></td>
                     <td className="px-6 py-4"><div className="h-8 w-24 bg-slate-200 rounded ml-auto"></div></td>
                   </tr>
                 ))
               ) : employees.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
                       <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -221,15 +225,19 @@ function EmployeeListContent() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-slate-900">NIP: {emp.nip || '-'}</div>
                       <div className="text-sm text-slate-500">NIDN: {emp.nidn || '-'}</div>
-                      {emp.tmtPertama && (
-                        <div className="text-[11px] font-semibold text-blue-600 mt-1">
-                          Masuk: {new Date(emp.tmtPertama).getFullYear()}
-                        </div>
-                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-semibold text-slate-900">{emp.unitKerja || '-'}</div>
-                      <div className="text-sm text-slate-500">{emp.jabatanStruktural || emp.jabatanAkademik || '-'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-slate-700">{emp.jabatanStruktural || emp.jabatanAkademik || '-'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      {emp.tmtPertama ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-slate-100 text-slate-700">
+                          {new Date(emp.tmtPertama).getFullYear()}
+                        </span>
+                      ) : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
