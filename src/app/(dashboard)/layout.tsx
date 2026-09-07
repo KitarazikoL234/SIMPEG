@@ -366,7 +366,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               {/* Notification Dropdown Menu */}
               {isNotificationOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl py-2 border border-slate-100 z-50">
+                <div className="absolute -right-4 sm:right-0 mt-3 w-[340px] max-w-[calc(100vw-32px)] bg-white rounded-2xl shadow-2xl py-2 border border-slate-100 z-50 origin-top-right animate-in fade-in zoom-in-95 duration-200">
                   <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                     <h3 className="text-sm font-bold text-slate-900">Notifikasi</h3>
                     <button 
@@ -436,7 +436,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               {/* Profile Dropdown Menu */}
               {isProfileOpen && (
-                <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 divide-y divide-slate-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-200">
+                <div className="absolute -right-4 sm:right-0 mt-3 w-[300px] max-w-[calc(100vw-32px)] bg-white rounded-2xl shadow-2xl border border-slate-100 divide-y divide-slate-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-200">
                   <div className="px-4 py-4 bg-slate-50/50">
                     <p className="text-sm font-bold text-slate-900 truncate">{user?.nama}</p>
                     <p className="text-xs text-slate-500 font-medium truncate mt-0.5">{user?.email || 'N/A'}</p>
