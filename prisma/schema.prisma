@@ -29,6 +29,20 @@ model User {
   uploadedDocuments Document[] @relation("UploadedBy")
   tickets           Ticket[]
   ticketMessages    TicketMessage[]
+  webauthnCredentials WebAuthnCredential[]
+}
+
+model WebAuthnCredential {
+  id              String   @id @default(uuid())
+  credentialId    String   @unique
+  publicKey       String   // base64 encoded
+  counter         Int      @default(0)
+  deviceType      String?  // platform, cross-platform
+  transports      String?  // JSON array of transports
+  createdAt       DateTime @default(now())
+
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Employee {

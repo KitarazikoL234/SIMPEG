@@ -113,29 +113,70 @@ export default function LoginPage() {
 
   const handleFingerprintLogin = async (isAuto = false) => {
     try {
-      if (window.PublicKeyCredential) {
-        await navigator.credentials.get({
-          publicKey: {
-            challenge: new Uint8Array(32),
-            rpId: window.location.hostname,
-            userVerification: 'required',
-            timeout: 60000,
-          }
-        });
-        
-        localStorage.setItem('preferFingerprint', 'true');
-        alert('Autentikasi sidik jari berhasil!');
-        router.push("/dashboard");
-      } else {
+      if (!window.PublicKeyCredential) {
         if (!isAuto) alert('Perangkat/Browser Anda tidak mendukung Autentikasi Sidik Jari (WebAuthn).');
+        return;
+      }
+
+      // 1. Get login options from server
+      const optRes = await fetch('/api/webauthn/login/options', { method: 'POST' });
+      const optJson = await optRes.json();
+      if (!optJson.success) {
+        if (!isAuto) alert(optJson.error || 'Gagal memuat opsi login.');
+        return;
+      }
+
+      const options = optJson.options;
+
+      // 2. Convert base64url to ArrayBuffer
+      const challengeBuffer = Uint8Array.from(
+        atob(options.challenge.replace(/-/g, '+').replace(/_/g, '/')), 
+        c => c.charCodeAt(0)
+      );
+
+      const allowCredentials = (options.allowCredentials || []).map((cred: any) => ({
+        ...cred,
+        id: Uint8Array.from(
+          atob(cred.id.replace(/-/g, '+').replace(/_/g, '/')), 
+          c => c.charCodeAt(0)
+        ),
+      }));
+
+      // 3. Call WebAuthn API (this triggers fingerprint/face sensor)
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: challengeBuffer,
+          rpId: window.location.hostname,
+          timeout: options.timeout,
+          userVerification: options.userVerification,
+          allowCredentials,
+        }
+      }) as PublicKeyCredential;
+
+      if (!assertion) return;
+
+      // 4. Send credential ID to server to identify user
+      const credentialIdB64 = btoa(String.fromCharCode(...new Uint8Array(assertion.rawId)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+
+      const verifyRes = await fetch('/api/webauthn/login/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credentialId: credentialIdB64 })
+      });
+
+      const verifyJson = await verifyRes.json();
+      if (verifyJson.success) {
+        router.push('/dashboard');
+      } else {
+        if (!isAuto) alert(verifyJson.error || 'Sidik jari tidak dikenali.');
       }
     } catch (e: any) {
-      // If it was an auto-prompt and user cancelled, just fail silently so they can use password
       if (!isAuto) {
         if (e.name === 'NotAllowedError') {
           alert('Autentikasi dibatalkan atau sidik jari tidak dikenali.');
         } else {
-          alert('Gagal menggunakan sidik jari. Pastikan sidik jari Anda sudah diatur.');
+          alert('Gagal menggunakan sidik jari. Pastikan sidik jari Anda sudah didaftarkan melalui menu Pengaturan.');
         }
       }
     }
