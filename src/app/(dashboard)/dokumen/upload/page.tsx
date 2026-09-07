@@ -26,6 +26,7 @@ export default function UploadDokumenPage() {
   const [taggedLinks, setTaggedLinks] = useState<Record<string, string>>({});
   const [isDragging, setIsDragging] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
+  const [customCategories, setCustomCategories] = useState<any[]>([]);
   
   const [formData, setFormData] = useState({
     employeeId: '',
