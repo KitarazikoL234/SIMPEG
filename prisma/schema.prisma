@@ -151,6 +151,7 @@ model Document {
   semester        String?
   tahunAkademik   String?
   status          String   @default("AKTIF") // AKTIF, KADALUARSA, ARSIP
+  approvalStatus  String   @default("APPROVED") // PENDING, APPROVED, REJECTED
   tipeFile        String   // UPLOAD, LINK
   filePath        String?
   linkRepository  String?

@@ -16,6 +16,7 @@ export default function DokumenPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('SEMUA');
+  const [approvalFilter, setApprovalFilter] = useState<string>('SEMUA'); // SEMUA, PENDING, APPROVED, REJECTED
   const [toastMessage, setToastMessage] = useState<{show: boolean, docId: string, prevStatus: string}>({show: false, docId: '', prevStatus: ''});
 
   const [customCategories, setCustomCategories] = useState<any[]>([]);
@@ -27,7 +28,8 @@ export default function DokumenPage() {
     setLoading(true);
     try {
       const catQuery = activeCategory !== 'SEMUA' ? `&kategoriUtama=${activeCategory}` : '';
-      const res = await fetch(`/api/documents?q=${search}&limit=50${catQuery}`);
+      const appQuery = approvalFilter !== 'SEMUA' ? `&approvalStatus=${approvalFilter}` : '';
+      const res = await fetch(`/api/documents?q=${search}&limit=50${catQuery}${appQuery}`);
       const json = await res.json();
       if (json.success) {
         setDocuments(json.data.data);
@@ -41,7 +43,7 @@ export default function DokumenPage() {
 
   useEffect(() => {
     fetchDocuments();
-  }, [search, activeCategory]);
+  }, [search, activeCategory, approvalFilter]);
 
   useEffect(() => {
     // Fetch custom categories
@@ -125,7 +127,18 @@ export default function DokumenPage() {
     }
   };
 
-
+  const handleApproval = async (id: string, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/documents/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approvalStatus: newStatus })
+      });
+      if (res.ok) fetchDocuments();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const undoDelete = async () => {
     if (!toastMessage.docId) return;
@@ -150,6 +163,14 @@ export default function DokumenPage() {
       case 'KADALUARSA': return 'bg-red-100 text-red-700 border-red-200';
       case 'ARSIP': return 'bg-gray-100 text-gray-700 border-gray-200';
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
+
+  const getApprovalBadge = (status: string) => {
+    switch(status) {
+      case 'PENDING': return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">Menunggu ACC</span>;
+      case 'REJECTED': return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-rose-100 text-rose-700 border border-rose-200">Ditolak</span>;
+      default: return null; // We don't show anything for APPROVED to keep UI clean
     }
   };
 
@@ -228,7 +249,26 @@ export default function DokumenPage() {
                     <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                   </div>
                 </div>
+
                 {(userRole === 'ADMIN' || userRole === 'PIMPINAN') && (
+                  <div className="relative shrink-0">
+                    <select
+                      value={approvalFilter}
+                      onChange={(e) => setApprovalFilter(e.target.value)}
+                      className="pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:border-blue-500 focus:outline-none transition-colors appearance-none cursor-pointer"
+                    >
+                      <option value="SEMUA">Semua Status ACC</option>
+                      <option value="PENDING">Menunggu ACC</option>
+                      <option value="APPROVED">Disetujui</option>
+                      <option value="REJECTED">Ditolak</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {(userRole === 'ADMIN' || userRole === 'PIMPINAN') && (
                   <>
                     <button
                       onClick={() => setShowAddCategoryModal(true)}
@@ -328,7 +368,10 @@ export default function DokumenPage() {
                             {doc.tipeFile === 'LINK' ? <LinkIcon className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
                           </div>
                           <div>
-                            <div className="text-base font-medium text-slate-900 group-hover:text-blue-600 transition-colors truncate max-w-xs">{doc.judul}</div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-base font-medium text-slate-900 group-hover:text-blue-600 transition-colors truncate max-w-xs">{doc.judul}</div>
+                              {getApprovalBadge(doc.approvalStatus)}
+                            </div>
                             {doc.nomorDokumen && <div className="text-sm text-slate-500 truncate max-w-xs mt-1">{doc.nomorDokumen}</div>}
                           </div>
                         </div>
@@ -405,6 +448,25 @@ export default function DokumenPage() {
                             </span>
                           )}
 
+                          {(userRole === 'ADMIN' || userRole === 'PIMPINAN') && doc.approvalStatus === 'PENDING' && (
+                            <div className="flex gap-1 border-r border-slate-200 pr-3 mr-1">
+                              <button 
+                                onClick={() => handleApproval(doc.id, 'APPROVED')}
+                                className="inline-flex items-center justify-center p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors border border-emerald-200 shadow-sm"
+                                title="Setujui (ACC)"
+                              >
+                                <span className="text-xs font-bold px-1">ACC</span>
+                              </button>
+                              <button 
+                                onClick={() => handleApproval(doc.id, 'REJECTED')}
+                                className="inline-flex items-center justify-center p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 shadow-sm"
+                                title="Tolak"
+                              >
+                                <span className="text-xs font-bold px-1">Tolak</span>
+                              </button>
+                            </div>
+                          )}
+
                           {/* Pin Button */}
                           <button 
                             onClick={() => handleTogglePin(doc.id, doc.isPinned)}
@@ -452,10 +514,31 @@ export default function DokumenPage() {
                       {doc.tipeFile === 'LINK' ? <LinkIcon className="w-7 h-7" /> : <FileText className="w-7 h-7" />}
                     </div>
                     <div className="flex flex-col items-end gap-1.5">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(doc.status)}`}>
-                        {doc.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {getApprovalBadge(doc.approvalStatus)}
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(doc.status)}`}>
+                          {doc.status}
+                        </span>
+                      </div>
                       <div className="flex gap-1">
+                        {(userRole === 'ADMIN' || userRole === 'PIMPINAN') && doc.approvalStatus === 'PENDING' && (
+                          <>
+                            <button 
+                              onClick={() => handleApproval(doc.id, 'APPROVED')}
+                              className="p-1.5 rounded-md text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors border border-emerald-200"
+                              title="Setujui (ACC)"
+                            >
+                              <span className="text-[10px] font-bold">ACC</span>
+                            </button>
+                            <button 
+                              onClick={() => handleApproval(doc.id, 'REJECTED')}
+                              className="p-1.5 rounded-md text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors border border-rose-200"
+                              title="Tolak"
+                            >
+                              <span className="text-[10px] font-bold">TOLAK</span>
+                            </button>
+                          </>
+                        )}
                         <button 
                           onClick={() => handleTogglePin(doc.id, doc.isPinned)}
                           className={`p-1.5 rounded-md transition-all duration-300 ease-in-out active:scale-90 ${doc.isPinned ? 'bg-amber-100 text-amber-500 shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-amber-500'}`}

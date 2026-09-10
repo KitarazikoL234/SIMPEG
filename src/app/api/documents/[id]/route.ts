@@ -130,6 +130,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const updateData: any = {};
     if (body.isPinned !== undefined) updateData.isPinned = body.isPinned;
     if (body.status !== undefined) updateData.status = body.status;
+    if (body.approvalStatus !== undefined) updateData.approvalStatus = body.approvalStatus;
 
     const document = await prisma.document.update({
       where: { id },

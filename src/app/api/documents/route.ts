@@ -43,6 +43,10 @@ export async function GET(request: Request) {
     }
     if (kategoriUtama) where.kategoriUtama = kategoriUtama;
     if (subKategori) where.subKategori = subKategori;
+    
+    const approvalStatus = searchParams.get('approvalStatus');
+    if (approvalStatus) where.approvalStatus = approvalStatus;
+
     if (status) {
       where.status = status;
     } else {
@@ -118,6 +122,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
+    const autoApprove = (session.role === 'ADMIN' || session.role === 'PIMPINAN');
+    const approvalStatus = autoApprove ? 'APPROVED' : 'PENDING';
+
     const documentData = {
       judul,
       nomorDokumen,
@@ -134,6 +141,7 @@ export async function POST(request: Request) {
       catatan,
       uploadedById,
       status: 'AKTIF',
+      approvalStatus,
     };
 
     // 1. Create document for the primary employee
