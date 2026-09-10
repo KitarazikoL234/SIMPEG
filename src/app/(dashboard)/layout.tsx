@@ -81,8 +81,19 @@ function SidebarNav({
                   <div className="ml-5 mt-1 pl-4 border-l border-slate-200 space-y-1">
                     {item.subItems.map((subItem: any) => {
                       // Check if active (match pathname and any query params in href)
+                      // Check if active (match pathname and any query params in href)
                       const [basePath, queryStr] = subItem.href.split('?');
-                      const isSubActive = pathname === basePath && (!queryStr || queryStr === `tipe=${searchParams?.get('tipe')}`);
+                      let isSubActive = pathname === basePath;
+                      
+                      if (queryStr) {
+                        const urlParams = new URLSearchParams(queryStr);
+                        for (const [key, value] of urlParams.entries()) {
+                          if (searchParams?.get(key) !== value) {
+                            isSubActive = false;
+                            break;
+                          }
+                        }
+                      }
                       
                       return (
                         <Link
