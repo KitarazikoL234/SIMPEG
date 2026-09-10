@@ -290,23 +290,23 @@ export default function DokumenPage() {
                     )}
                   </>
                 )}
-              </div>
               <div className="h-8 w-px bg-slate-300 mx-1 shrink-0"></div>
               <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200 shrink-0">
-              <button 
-                onClick={() => setView('list')}
-                className={`p-2.5 rounded-lg transition-colors ${view === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                <ListIcon className="w-6 h-6" />
-              </button>
-              <button 
-                onClick={() => setView('grid')}
-                className={`p-2.5 rounded-lg transition-colors ${view === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                <GridIcon className="w-6 h-6" />
-              </button>
+                <button 
+                  onClick={() => setView('list')}
+                  className={`p-2.5 rounded-lg transition-colors ${view === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  <ListIcon className="w-6 h-6" />
+                </button>
+                <button 
+                  onClick={() => setView('grid')}
+                  className={`p-2.5 rounded-lg transition-colors ${view === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  <GridIcon className="w-6 h-6" />
+                </button>
               </div>
             </div>
+          </div>
       {/* Content */}
       {loading ? (
         <div className="flex justify-center items-center py-20">
