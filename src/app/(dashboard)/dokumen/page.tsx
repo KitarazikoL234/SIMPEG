@@ -168,9 +168,10 @@ export default function DokumenPage() {
 
   const getApprovalBadge = (status: string) => {
     switch(status) {
-      case 'PENDING': return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">Menunggu ACC</span>;
-      case 'REJECTED': return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-rose-100 text-rose-700 border border-rose-200">Ditolak</span>;
-      default: return null; // We don't show anything for APPROVED to keep UI clean
+      case 'PENDING': return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Menunggu ACC</span>;
+      case 'REJECTED': return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Ditolak</span>;
+      case 'APPROVED': return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Disetujui</span>;
+      default: return null;
     }
   };
 
@@ -321,8 +322,6 @@ export default function DokumenPage() {
               </button>
               </div>
             </div>
-        </div>
-
       {/* Content */}
       {loading ? (
         <div className="flex justify-center items-center py-20">
@@ -368,10 +367,7 @@ export default function DokumenPage() {
                             {doc.tipeFile === 'LINK' ? <LinkIcon className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
                           </div>
                           <div>
-                            <div className="flex items-center gap-2">
-                              <div className="text-base font-medium text-slate-900 group-hover:text-blue-600 transition-colors truncate max-w-xs">{doc.judul}</div>
-                              {getApprovalBadge(doc.approvalStatus)}
-                            </div>
+                            <div className="text-base font-medium text-slate-900 group-hover:text-blue-600 transition-colors truncate max-w-xs">{doc.judul}</div>
                             {doc.nomorDokumen && <div className="text-sm text-slate-500 truncate max-w-xs mt-1">{doc.nomorDokumen}</div>}
                           </div>
                         </div>
@@ -395,12 +391,11 @@ export default function DokumenPage() {
                       </td>
                       <td className="px-8 py-6 whitespace-nowrap">
                         <div className="flex flex-col gap-2">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold w-fit border ${getStatusColor(doc.status)}`}>
-                            {doc.status}
-                          </span>
-                          <div className="flex gap-1.5 mt-1">
-                            <span className="text-[11px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded">Public</span>
-                            <span className="text-[11px] font-bold px-2 py-0.5 bg-blue-50 text-blue-600 rounded border border-blue-100">Tag: Penting</span>
+                          <div className="flex flex-col items-start gap-1.5">
+                            {getApprovalBadge(doc.approvalStatus)}
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-fit border ${getStatusColor(doc.status)}`}>
+                              {doc.status}
+                            </span>
                           </div>
                         </div>
                       </td>
@@ -514,9 +509,9 @@ export default function DokumenPage() {
                       {doc.tipeFile === 'LINK' ? <LinkIcon className="w-7 h-7" /> : <FileText className="w-7 h-7" />}
                     </div>
                     <div className="flex flex-col items-end gap-1.5">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
                         {getApprovalBadge(doc.approvalStatus)}
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(doc.status)}`}>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(doc.status)}`}>
                           {doc.status}
                         </span>
                       </div>
