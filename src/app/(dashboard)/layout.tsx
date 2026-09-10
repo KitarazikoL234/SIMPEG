@@ -233,7 +233,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         { name: 'Tendik', href: '/pegawai?tipe=TENDIK' }
       ]
     }] : []),
-    { name: 'Dokumen', href: '/dokumen', icon: FolderOpen },
+    { 
+      name: 'Dokumen', 
+      href: '/dokumen', 
+      icon: FolderOpen,
+      ...(isManagement ? {
+        subItems: [
+          { name: 'Menunggu ACC', href: '/dokumen?approvalStatus=PENDING' },
+          { name: 'Disetujui', href: '/dokumen?approvalStatus=APPROVED' },
+          { name: 'Ditolak', href: '/dokumen?approvalStatus=REJECTED' }
+        ]
+      } : {})
+    },
     { name: 'Presensi', href: '/presensi', icon: Clock },
   ];
 

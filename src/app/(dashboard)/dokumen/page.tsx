@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { 
   Search, Plus, FileText, Grid as GridIcon, List as ListIcon,
   Filter, Download, Eye, MoreVertical, Link as LinkIcon, Trash2, Pencil, AlertTriangle, Pin
@@ -10,13 +11,15 @@ import { KategoriUtama, KATEGORI_COLORS, KATEGORI_BG_COLORS, KATEGORI_UTAMA_LABE
 import { formatDate } from '@/lib/utils';
 
 export default function DokumenPage() {
+  const searchParams = useSearchParams();
+  const approvalStatus = searchParams.get('approvalStatus') || '';
+
   const [view, setView] = useState<'grid' | 'list'>('list');
   const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, docId: string}>({isOpen: false, docId: ''});
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('SEMUA');
-  const [approvalFilter, setApprovalFilter] = useState<string>('SEMUA'); // SEMUA, PENDING, APPROVED, REJECTED
   const [toastMessage, setToastMessage] = useState<{show: boolean, docId: string, prevStatus: string}>({show: false, docId: '', prevStatus: ''});
 
   const [customCategories, setCustomCategories] = useState<any[]>([]);
@@ -28,7 +31,7 @@ export default function DokumenPage() {
     setLoading(true);
     try {
       const catQuery = activeCategory !== 'SEMUA' ? `&kategoriUtama=${activeCategory}` : '';
-      const appQuery = approvalFilter !== 'SEMUA' ? `&approvalStatus=${approvalFilter}` : '';
+      const appQuery = approvalStatus ? `&approvalStatus=${approvalStatus}` : '';
       const res = await fetch(`/api/documents?q=${search}&limit=50${catQuery}${appQuery}`);
       const json = await res.json();
       if (json.success) {
@@ -43,7 +46,7 @@ export default function DokumenPage() {
 
   useEffect(() => {
     fetchDocuments();
-  }, [search, activeCategory, approvalFilter]);
+  }, [search, activeCategory, approvalStatus]);
 
   useEffect(() => {
     // Fetch custom categories
@@ -166,38 +169,13 @@ export default function DokumenPage() {
     }
   };
 
-  const renderApprovalStatus = (doc: any) => {
-    const status = doc.approvalStatus;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'PIMPINAN';
-
-    const baseClass = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer outline-none border-0 text-center transition-colors shadow-sm focus:ring-2 focus:ring-blue-500 focus:ring-offset-1";
-    
-    let colorClass = "";
-    if (status === 'PENDING') colorClass = "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
-    else if (status === 'REJECTED') colorClass = "bg-red-100 text-red-800 hover:bg-red-200";
-    else if (status === 'APPROVED') colorClass = "bg-green-100 text-green-800 hover:bg-green-200";
-
-    if (isAdmin) {
-      return (
-        <div className="relative inline-block w-fit">
-          <select 
-            value={status}
-            onChange={(e) => handleApproval(doc.id, e.target.value)}
-            className={`${baseClass} ${colorClass} appearance-none pr-7 pl-3 h-6`}
-          >
-            <option value="PENDING" className="bg-white text-slate-700">Menunggu ACC</option>
-            <option value="APPROVED" className="bg-white text-slate-700">Disetujui (ACC)</option>
-            <option value="REJECTED" className="bg-white text-slate-700">Ditolak</option>
-          </select>
-          <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none">
-            <svg className="w-3 h-3 opacity-60" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
-          </div>
-        </div>
-      );
+  const getApprovalBadge = (status: string) => {
+    switch(status) {
+      case 'PENDING': return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Menunggu ACC</span>;
+      case 'REJECTED': return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Ditolak</span>;
+      case 'APPROVED': return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Disetujui</span>;
+      default: return null;
     }
-
-    const label = status === 'PENDING' ? 'Menunggu ACC' : status === 'REJECTED' ? 'Ditolak' : 'Disetujui';
-    return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClass.replace(/hover:bg-\w+-200/, '')}`}>{label}</span>;
   };
 
   const getCategoryColor = (kategori: KategoriUtama) => {
@@ -275,24 +253,6 @@ export default function DokumenPage() {
                     <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                   </div>
                 </div>
-
-                {(userRole === 'ADMIN' || userRole === 'PIMPINAN') && (
-                  <div className="relative shrink-0">
-                    <select
-                      value={approvalFilter}
-                      onChange={(e) => setApprovalFilter(e.target.value)}
-                      className="pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:border-blue-500 focus:outline-none transition-colors appearance-none cursor-pointer"
-                    >
-                      <option value="SEMUA">Semua Status ACC</option>
-                      <option value="PENDING">Menunggu ACC</option>
-                      <option value="APPROVED">Disetujui</option>
-                      <option value="REJECTED">Ditolak</option>
-                    </select>
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
-                  </div>
-                )}
               </div>
               {(userRole === 'ADMIN' || userRole === 'PIMPINAN') && (
                   <>
@@ -417,7 +377,7 @@ export default function DokumenPage() {
                       <td className="px-8 py-6 whitespace-nowrap">
                         <div className="flex flex-col gap-2">
                           <div className="flex flex-col items-start gap-1.5">
-                            {renderApprovalStatus(doc)}
+                            {getApprovalBadge(doc.approvalStatus)}
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-fit border ${getStatusColor(doc.status)}`}>
                               {doc.status}
                             </span>
@@ -516,7 +476,7 @@ export default function DokumenPage() {
                     </div>
                     <div className="flex flex-col items-end gap-1.5">
                       <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                        {renderApprovalStatus(doc)}
+                        {getApprovalBadge(doc.approvalStatus)}
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(doc.status)}`}>
                           {doc.status}
                         </span>
